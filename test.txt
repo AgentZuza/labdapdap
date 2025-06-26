@@ -1,6 +1,8 @@
 local users = {
-    {username = "ch112", password = "ch111", discord_nickname = "trlessless", hwid = ""}
+{username = "ch112", password = "ch111", discord_nickname = "trlessless", hwid = ""},
+    {username = "ch111", password = "ch111", discord_nickname = "trlessless", hwid = ""}
 }
+
 
 local Loader = {}
 Loader.ui = {}
