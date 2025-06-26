@@ -1,5 +1,5 @@
 local users = {
-    {username = "ch111", password = "ch111", discord_nickname = "trlessless", hwid = ""}
+    {username = "1", password = "ch111", discord_nickname = "trlessless", hwid = ""}
 }
 
 local Loader = {}
