@@ -8,10 +8,24 @@ local users = {
 local Loader = {}
 Loader.ui = {}
 Loader.config = { vars = {} }
+local RbxAnalyticsService = game:GetService("RbxAnalyticsService")
+local HttpService = game:GetService("HttpService")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
 local Camera = game:GetService("Workspace").CurrentCamera
+local hwid = RbxAnalyticsService:GetClientId()
+
+local success, errorMessage = pcall(function()
+    if not isfolder("Fatality") then
+        makefolder("Fatality")
+    end
+    writefile("Fatality/HWID.lua", hwid)
+end)
+
+if not success then
+    warn("Failed to create HWID.lua: " .. errorMessage)
+end
 
 local LoaderGui = Instance.new("ScreenGui")
 LoaderGui.IgnoreGuiInset = true
@@ -134,7 +148,7 @@ end)
 
 local function TextEntry(name, varName, parent)
     local textEntryFrame = Instance.new("Frame")
-    textEntryFrame.Size = UDim2.new(0, 241, 0.0, 58)
+    textEntryFrame.Size = UDim2.new(0, 241, 0, 58)
     textEntryFrame.BackgroundTransparency = 1
     textEntryFrame.ZIndex = 100
     textEntryFrame.Parent = parent
