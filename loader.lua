@@ -1,3 +1,10 @@
+local users = {
+    {username = "test", password = "test", discord_nickname = "", hwid = "", subscription = "true" },
+    {username = "ch111", password = "ch111", discord_nickname = "trlessless", hwid = "", subscription = "false" },
+    {username = "admin", password = "admin123", discord_nickname = "love_gitler", hwid = "95DC1493-4ED1-436F-B563-CC545354CD8B", subscription = "true" }
+}
+
+
 local Loader = {}
 Loader.ui = {}
 Loader.config = { vars = {} }
@@ -5,11 +12,6 @@ local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
 local Camera = game:GetService("Workspace").CurrentCamera
-
-local users = {
-    {username = "test", password = "test"},
-    {username = "admin", password = "admin123"}
-}
 
 local LoaderGui = Instance.new("ScreenGui")
 LoaderGui.IgnoreGuiInset = true
@@ -304,9 +306,12 @@ LoginButton.MouseLeave:Connect(function()
 end)
 
 local function checkUser(username, password)
+    local hwid = game:GetService("RbxAnalyticsService"):GetClientId()
     for _, user in ipairs(users) do
         if user.username == username and user.password == password then
-            return true
+            if user.hwid == hwid and user.subscription == "true" then
+                return true
+            end
         end
     end
     return false
@@ -317,10 +322,12 @@ LoginButton.MouseButton1Click:Connect(function()
     local password = PasswordInput.Text
     if username == "" or password == "" then
         shakeMainFrame()
-    elseif checkUser(username, password) then
-        LoaderGui:Destroy()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/AgentZuza/labdapdap/refs/heads/main/pumpum.lua"))()
     else
-        shakeMainFrame()
+        if checkUser(username, password) then
+            LoaderGui:Destroy()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/AgentZuza/labdapdap/refs/heads/main/pumpum.lua"))()
+        else
+            shakeMainFrame()
+        end
     end
 end)
