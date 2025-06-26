@@ -1,7 +1,7 @@
 local users = {
-{username = "test", password = "test", discord_nickname = "", hwid = ""}
-{username = "ch111", password = "ch111", discord_nickname = "trlessless", hwid = ""}
-{username = "admin", password = "admin123", discord_nickname = "love_gitler", hwid = "95DC1493-4ED1-436F-B563-CC545354CD8B"},
+    {username = "test", password = "test", discord_nickname = "", hwid = ""},
+    {username = "ch111", password = "ch111", discord_nickname = "trlessless", hwid = ""},
+    {username = "admin", password = "admin123", discord_nickname = "love_gitler", hwid = "95DC1493-4ED1-436F-B563-CC545354CD8B"},
     {username = "ch113", password = "ch111", discord_nickname = "trlessless", hwid = ""}
 }
 
