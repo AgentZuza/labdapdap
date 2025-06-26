@@ -10,7 +10,7 @@ Loader.ui = {}
 Loader.config = { vars = {} }
 local RbxAnalyticsService = game:GetService("RbxAnalyticsService")
 local HttpService = game:GetService("HttpService")
-local TweenService = game:GetService("TweenService")
+local TweenService = game:GetService("TweenService") -- не работает
 local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
 local Camera = game:GetService("Workspace").CurrentCamera
