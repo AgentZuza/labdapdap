@@ -1,1 +1,16 @@
+local users = {{username = "newuser", password = "newpass", discord_nickname = "NewUser123", hwid = "abc123",
+    {username = "newuser", password = "newpass", discord_nickname = "NewUser123", hwid = "abc123",
+    {username = "newuser", password = "newpass", discord_nickname = "NewUser123", hwid = "abc123",
+    {username = "newuser", password = "newpass", discord_nickname = "NewUser123", hwid = "abc123"}
+}
+}
+}
+}
 
+local users = {
+    {username = "testuser", password = "testpass", discord_nickname = "TestUser123", hwid = "abc123",
+    {username = "newuser", password = "newpass", discord_nickname = "NewUser123", hwid = "",
+    {username = "newuser", password = "newpass", discord_nickname = "NewUser123", hwid = ""}
+}
+}
+}
