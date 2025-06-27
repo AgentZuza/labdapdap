@@ -1,21 +1,27 @@
 local users = {
     {username = "test", password = "test", discord_nickname = "", hwid = "", subscription = "true" },
     {username = "ch111", password = "ch111", discord_nickname = "trlessless", hwid = "B189165D-B889-4FD5-BE1A-AB0B6C4FE674", subscription = "true"},
-    {username = "admin", password = "admin123", discord_nickname = "love_gitler", hwid = "95DC1493-4ED1-436F-B563-CC545354CD8B", subscription = "true" },
-    {username = "sdasdas", password = "sadasdasd", discord_nickname = "love_gitler", discord_id = "1322273544205504542", hwid = "", subscription = "false"}
+    {username = "admin", password = "admin123", discord_nickname = "love_gitler", hwid = "95DC1493-4ED1-436F-B563-CC545354CD8B", subscription = "true" }
 }
 
 
 local Loader = {}
 Loader.ui = {}
 Loader.config = { vars = {} }
-local RbxAnalyticsService = game:GetService("RbxAnalyticsService")
-local HttpService = game:GetService("HttpService")
-local TweenService = game:GetService("TweenService") -- не работает
-local UserInputService = game:GetService("UserInputService")
-local CoreGui = game:GetService("CoreGui")
-local Camera = game:GetService("Workspace").CurrentCamera
-local hwid = RbxAnalyticsService:GetClientId()
+
+local function ChekerFatality(name, func)
+    local obj, timeout, startTime = func(), 5, tick()
+    while not obj and tick() - startTime < timeout do task.wait() obj = func() end
+    return obj or warn("Не удалось получить " .. name)
+end
+
+local HttpService = ChekerFatality("HttpService", function() return game:GetService("HttpService") end)
+local UserInputService = ChekerFatality("UserInputService", function() return game:GetService("UserInputService") end)
+local CoreGui = ChekerFatality("CoreGui", function() return game:GetService("CoreGui") end)
+local Camera = ChekerFatality("CurrentCamera", function() return game.Workspace.CurrentCamera end)
+local TweenService = ChekerFatality("TweenService", function() return game:GetService("TweenService") end)
+local RbxAnalyticsService = ChekerFatality("RbxAnalyticsService", function() return game:GetService("RbxAnalyticsService") end)
+local hwid = RbxAnalyticsService and RbxAnalyticsService:GetClientId() or (HttpService and HttpService:GetUserId() or "unknown")
 
 local success, errorMessage = pcall(function()
     if not isfolder("Fatality") then
@@ -340,7 +346,7 @@ LoginButton.MouseButton1Click:Connect(function()
     else
         if checkUser(username, password) then
             LoaderGui:Destroy()
-            loadstring(game:HttpGet("https://raw.githubusercontent.com/AgentZuza/labdapdap/refs/heads/main/pumpum.lua"))()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/AgentZuza/labdapdap/refs/heads/main/pumpum.lua?token=GHSAT0AAAAAADGJJKXSP4LELRUYYEYMQ4ES2C6FBWA"))()
         else
             shakeMainFrame()
         end
