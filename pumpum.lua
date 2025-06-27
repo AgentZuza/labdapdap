@@ -898,6 +898,12 @@ function Fatality.ui.ColorPicker(name, varName, parent)
             Fatality.ui.ColorPanelBG = nil
         end
 
+        for _, comboBox in ipairs(Fatality.ui.ActiveComboBoxes) do
+            if comboBox.isOpen() then
+                comboBox.close()
+            end
+        end
+
         resetOtherPickers()
 
         Fatality.ui.ActiveColorPicker = varName
@@ -1978,198 +1984,449 @@ function Fatality.ui.ModelViewer(name, parent)
     viewerFrame.ZIndex = 100
     viewerFrame.Parent = parent
 
-    local buttonFrame = Instance.new("Frame")
-    buttonFrame.Size = UDim2.new(1, 0, 0.1, 0)
-    buttonFrame.Position = UDim2.new(-0.05, 0, -0.05, 0)
-    buttonFrame.BackgroundTransparency = 1
-    buttonFrame.ZIndex = 150
-    buttonFrame.Parent = viewerFrame
+    local viewport = Instance.new("ViewportFrame")
+    viewport.Size = UDim2.new(1.05, 0, 1.85, 0)
+    viewport.Position = UDim2.new(0.1, 2, 0.275, 4)
+    viewport.BackgroundColor3 = Color3.fromRGB(29, 23, 60)
+    viewport.ZIndex = 100
+    viewport.Parent = viewerFrame
 
-    local buttonLayout = Instance.new("UIListLayout")
-    buttonLayout.FillDirection = Enum.FillDirection.Horizontal
-    buttonLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
-    buttonLayout.Padding = UDim.new(0, 5)
-    buttonLayout.Parent = buttonFrame
+    local espFrame = Instance.new("Frame")
+    espFrame.Size = UDim2.new(1.215, 0, 2, 0)
+    espFrame.Position = UDim2.new(0.025, 0, 0.225, 0)
+    espFrame.BackgroundTransparency = 1
+    espFrame.ZIndex = 101
+    espFrame.Parent = viewerFrame
 
-    local buttonPadding = Instance.new("UIPadding")
-    buttonPadding.PaddingLeft = UDim.new(0, 10)
-    buttonPadding.PaddingRight = UDim.new(0, 10)
-    buttonPadding.Parent = buttonFrame
+    local nameLabel = Instance.new("TextLabel")
+    nameLabel.BackgroundTransparency = 1
+    nameLabel.TextColor3 = Fatality.config.colors["NameCol"]
+    nameLabel.TextTransparency = 1 - (Fatality.config.colors.alpha["NameCol"] or 1)
+    nameLabel.TextStrokeTransparency = 0
+    nameLabel.TextSize = 11
+    nameLabel.Font = Enum.Font.Ubuntu
+    nameLabel.Visible = Fatality.config.vars["Name"]
+    nameLabel.Size = UDim2.new(1, 0, 0.2, 0)
+    nameLabel.Position = UDim2.new(0, 0, -0.15, 0)
+    nameLabel.TextXAlignment = Enum.TextXAlignment.Center
+    nameLabel.ZIndex = 101
+    nameLabel.Text = name
+    nameLabel.Parent = espFrame
 
-    local function createButton(text, isActive)
-        local button = Instance.new("TextButton")
-        button.Size = UDim2.new(0, 100, 0, 40)
-        button.BackgroundTransparency = 1
-        button.Text = text
-        button.TextColor3 = isActive and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(220, 220, 220)
-        button.Font = Enum.Font.GothamBold
-        button.TextSize = 25
-        button.ZIndex = 150
-        button.Parent = buttonFrame
+    local teamLabel = Instance.new("TextLabel")
+    teamLabel.BackgroundTransparency = 1
+    teamLabel.TextColor3 = Fatality.config.colors["TeamCol"]
+    teamLabel.TextTransparency = 1 - (Fatality.config.colors.alpha["TeamCol"] or 1)
+    teamLabel.TextStrokeTransparency = 0
+    teamLabel.TextSize = 11
+    teamLabel.Font = Enum.Font.Ubuntu
+    teamLabel.Visible = Fatality.config.vars["TeamPlayer"]
+    teamLabel.Size = UDim2.new(0.5, 0, 0.2, 0)
+    teamLabel.Position = UDim2.new(0.87, 1, 0, -25)
+    teamLabel.TextXAlignment = Fatality.config.vars["TeamPos"] ~= 3 and Enum.TextXAlignment.Center or Enum.TextXAlignment.Left
+    teamLabel.ZIndex = 101
+    teamLabel.Text = "No Team"
+    teamLabel.Parent = espFrame
 
-        local activeLine = Instance.new("Frame")
-        activeLine.Name = "ActiveLine"
-        activeLine.Size = isActive and UDim2.new(0, button.TextBounds.X, 0, 2) or UDim2.new(0, 0, 0, 2)
-        activeLine.Position = isActive and UDim2.new(0.5, -button.TextBounds.X/2, 1, 0) or UDim2.new(0.5, 0, 1, 0)
-        activeLine.BackgroundColor3 = Color3.fromRGB(195, 44, 95)
-        activeLine.ZIndex = 151
-        activeLine.Parent = button
+    local weaponLabel = Instance.new("TextLabel")
+    weaponLabel.BackgroundTransparency = 1
+    weaponLabel.TextColor3 = Fatality.config.colors["WepPlayerCol"]
+    weaponLabel.TextTransparency = 1 - (Fatality.config.colors.alpha["WepPlayerCol"] or 1)
+    weaponLabel.TextStrokeTransparency = 0
+    weaponLabel.TextSize = 11
+    weaponLabel.Font = Enum.Font.Ubuntu
+    weaponLabel.Visible = Fatality.config.vars["WeaponPlayer"]
+    weaponLabel.Size = UDim2.new(1, 0, 0.2, 0)
+    weaponLabel.Position = UDim2.new(0, 0, 0.94, 0)
+    weaponLabel.TextXAlignment = Fatality.config.vars["WepPlayerPos"] ~= 3 and Enum.TextXAlignment.Center or Enum.TextXAlignment.Left
+    weaponLabel.ZIndex = 101
+    weaponLabel.Text = "No Tool"
+    weaponLabel.Parent = espFrame
 
-        return button
+    local distanceLabel = Instance.new("TextLabel")
+    distanceLabel.BackgroundTransparency = 1
+    distanceLabel.TextColor3 = Fatality.config.colors["DistancePlayerCol"]
+    distanceLabel.TextTransparency = 1 - (Fatality.config.colors.alpha["DistancePlayerCol"] or 1)
+    distanceLabel.TextStrokeTransparency = 0
+    distanceLabel.TextSize = 11
+    distanceLabel.Font = Enum.Font.Ubuntu
+    distanceLabel.Visible = Fatality.config.vars["DistancePlayer"]
+    distanceLabel.Size = UDim2.new(1, 0, 0.2, 0)
+    distanceLabel.Position = UDim2.new(0, 0, 0.99, 0)
+    distanceLabel.TextXAlignment = Fatality.config.vars["DistancePlayerPos"] ~= 3 and Enum.TextXAlignment.Center or Enum.TextXAlignment.Left
+    distanceLabel.ZIndex = 101
+    distanceLabel.Text = "150m"
+    distanceLabel.Parent = espFrame
+
+    local healthLabel = Instance.new("TextLabel")
+    healthLabel.BackgroundTransparency = 1
+    healthLabel.TextColor3 = Fatality.config.colors["HealthPlayerCol"]
+    healthLabel.TextTransparency = 1 - (Fatality.config.colors.alpha["HealthPlayerCol"] or 1)
+    healthLabel.TextStrokeTransparency = 0
+    healthLabel.TextSize = 11
+    healthLabel.Font = Enum.Font.Ubuntu
+    healthLabel.Visible = Fatality.config.vars["HealthPlayer"]
+    healthLabel.Size = UDim2.new(0.37, 0, 0.05, 0)
+    healthLabel.TextXAlignment = Fatality.config.vars["HealthPos"] ~= 3 and Enum.TextXAlignment.Center or Enum.TextXAlignment.Left
+    healthLabel.ZIndex = 101
+    healthLabel.Text = "100"
+    healthLabel.Parent = espFrame
+
+    local healthSliderBG = Instance.new("Frame")
+    healthSliderBG.BackgroundColor3 = Color3.fromRGB(56, 56, 56)
+    healthSliderBG.BackgroundTransparency = 1 - (Fatality.config.colors.alpha["HealthPlayerCol"] or 1)
+    healthSliderBG.Visible = Fatality.config.vars["HealthPlayer"]
+    healthSliderBG.Size = UDim2.new(0, 5, 0, 0)
+    healthSliderBG.Position = UDim2.new(0, 0, 0, 0)
+    healthSliderBG.ZIndex = 101
+    healthSliderBG.Parent = espFrame
+
+    local healthSlider = Instance.new("Frame")
+    healthSlider.BackgroundColor3 = Fatality.config.colors["HealthPlayerCol"]
+    healthSlider.BackgroundTransparency = 1 - (Fatality.config.colors.alpha["HealthPlayerCol"] or 1)
+    healthSlider.Visible = Fatality.config.vars["HealthPlayer"]
+    healthSlider.Size = UDim2.new(0, 5, 0, 0)
+    healthSlider.Position = UDim2.new(0, 0, 0, 0)
+    healthSlider.ZIndex = 102
+    healthSlider.Parent = espFrame
+
+    local espStroke = Instance.new("UIStroke")
+    espStroke.Thickness = 2
+    espStroke.Color = Fatality.config.colors["EspCol"]
+    espStroke.Transparency = 1 - Fatality.config.colors.alpha["EspCol"]
+    espStroke.Enabled = Fatality.config.vars["EspBox"] and (Fatality.config.vars["BoxStyle"] == "Default" or Fatality.config.vars["BoxStyle"] == "Box 3D")
+    espStroke.Parent = espFrame
+
+    local cornerLines = {
+        TopLeft = Instance.new("Frame"),
+        TopRight = Instance.new("Frame"),
+        BottomLeft = Instance.new("Frame"),
+        BottomRight = Instance.new("Frame"),
+        LeftTop = Instance.new("Frame"),
+        RightTop = Instance.new("Frame"),
+        LeftBottom = Instance.new("Frame"),
+        RightBottom = Instance.new("Frame")
+    }
+    for _, line in pairs(cornerLines) do
+        line.BackgroundColor3 = Fatality.config.colors["EspCol"]
+        line.BackgroundTransparency = 1 - Fatality.config.colors.alpha["EspCol"]
+        line.Visible = false
+        line.ZIndex = 101
+        line.Parent = espFrame
     end
 
-    local localButton = createButton("Local", true)
-    local enemyButton = createButton("Enemy", false)
-    local entityButton = createButton("Entity", false)
+    local worldModel = Instance.new("WorldModel")
+    worldModel.Parent = viewport
 
-    local viewport
-    local worldModel
-    local success, errorMessage = pcall(function()
-        viewport = Instance.new("ViewportFrame")
-        viewport.Size = UDim2.new(1.215, 0, 2, 0)
-        viewport.Position = UDim2.new(0.025, 0, 0.225, 0)
-        viewport.BackgroundColor3 = Color3.fromRGB(29, 23, 60)
-        viewport.ZIndex = 100
-        viewport.Parent = viewerFrame
+    local camera = Instance.new("Camera")
+    camera.CFrame = CFrame.new(Vector3.new(0, 2, 4.8), Vector3.new(0, 2, 0))
+    viewport.CurrentCamera = camera
 
-        worldModel = Instance.new("WorldModel")
-        worldModel.Parent = viewport
+    local cachedConfig = {
+        EspBox = Fatality.config.vars["EspBox"],
+        BoxStyle = Fatality.config.vars["BoxStyle"],
+        EspCol = Fatality.config.colors["EspCol"],
+        EspColAlpha = Fatality.config.colors.alpha["EspCol"],
+        Name = Fatality.config.vars["Name"],
+        NameCol = Fatality.config.colors["NameCol"],
+        NameColAlpha = Fatality.config.colors.alpha["NameCol"],
+        TeamPlayer = Fatality.config.vars["TeamPlayer"],
+        TeamCol = Fatality.config.colors["TeamCol"],
+        TeamColAlpha = Fatality.config.colors.alpha["TeamCol"],
+        WeaponPlayer = Fatality.config.vars["WeaponPlayer"],
+        WepPlayerCol = Fatality.config.colors["WepPlayerCol"],
+        WepPlayerColAlpha = Fatality.config.colors.alpha["WepPlayerCol"],
+        DistancePlayer = Fatality.config.vars["DistancePlayer"],
+        DistancePlayerCol = Fatality.config.colors["DistancePlayerCol"],
+        DistancePlayerColAlpha = Fatality.config.colors.alpha["DistancePlayerCol"],
+        HealthPlayer = Fatality.config.vars["HealthPlayer"],
+        HealthPlayerCol = Fatality.config.colors["HealthPlayerCol"],
+        HealthPlayerColAlpha = Fatality.config.colors.alpha["HealthPlayerCol"],
+        HealthPlayerCol2 = Fatality.config.colors["HealthPlayerCol2"],
+        HealthPlayerCol2Alpha = Fatality.config.colors.alpha["HealthPlayerCol2"],
+        HealthPos = Fatality.config.vars["HealthPos"]
+    }
 
-        local camera = Instance.new("Camera")
-        camera.CFrame = CFrame.new(Vector3.new(0, 2, 4.8), Vector3.new(0, 2, 0))
-        viewport.CurrentCamera = camera
-    end)
+    local function updateEspStroke()
+        local isEspEnabled = Fatality.config.vars["EspBox"]
+        local boxStyle = Fatality.config.vars["BoxStyle"]
+        espStroke.Enabled = isEspEnabled and (boxStyle == "Default" or boxStyle == "Box 3D")
+        nameLabel.Visible = Fatality.config.vars["Name"]
+        teamLabel.Visible = Fatality.config.vars["TeamPlayer"]
+        weaponLabel.Visible = Fatality.config.vars["WeaponPlayer"]
+        distanceLabel.Visible = Fatality.config.vars["DistancePlayer"]
+        healthLabel.Visible = Fatality.config.vars["HealthPlayer"]
+        healthSliderBG.Visible = Fatality.config.vars["HealthPlayer"]
+        healthSlider.Visible = Fatality.config.vars["HealthPlayer"]
+        for _, line in pairs(cornerLines) do
+            line.Visible = isEspEnabled and boxStyle == "Corner"
+        end
 
-    if not success then
-        local errorLabel = Instance.new("TextLabel")
-        errorLabel.Size = UDim2.new(0.73, 0, 0.7, 0)
-        errorLabel.Position = UDim2.new(0.01, 0, 0.225, 0)
-        errorLabel.BackgroundColor3 = Color3.fromRGB(29, 23, 60)
-        errorLabel.Text = "Viewport Error"
-        errorLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
-        errorLabel.Font = Enum.Font.GothamBold
-        errorLabel.TextSize = 12
-        errorLabel.ZIndex = 100
-        errorLabel.Parent = viewerFrame
-        return viewerFrame
+        espStroke.Color = Fatality.config.colors["EspCol"]
+        espStroke.Transparency = 1 - (Fatality.config.colors.alpha["EspCol"] or 1)
+        nameLabel.TextColor3 = Fatality.config.colors["NameCol"]
+        nameLabel.TextTransparency = 1 - (Fatality.config.colors.alpha["NameCol"] or 1)
+        teamLabel.TextColor3 = Fatality.config.colors["TeamCol"]
+        teamLabel.TextTransparency = 1 - (Fatality.config.colors.alpha["TeamCol"] or 1)
+        weaponLabel.TextColor3 = Fatality.config.colors["WepPlayerCol"]
+        weaponLabel.TextTransparency = 1 - (Fatality.config.colors.alpha["WepPlayerCol"] or 1)
+        distanceLabel.TextColor3 = Fatality.config.colors["DistancePlayerCol"]
+        distanceLabel.TextTransparency = 1 - (Fatality.config.colors.alpha["DistancePlayerCol"] or 1)
+        for _, line in pairs(cornerLines) do
+            line.BackgroundColor3 = Fatality.config.colors["EspCol"]
+            line.BackgroundTransparency = 1 - (Fatality.config.colors.alpha["EspCol"] or 1)
+        end
+
+        local fov = camera.FieldOfView
+        local scale = math.clamp(70 / fov, 0.5, 1)
+        espFrame.Size = UDim2.new(1.05 * scale, 0, 1.85 * scale, 0)
+        espFrame.Position = UDim2.new(0.1 + 0.5 * (1.05 - 1.05 * scale), 2, 0.275 + 0.5 * (1.85 - 1.85 * scale), 4)
+
+        if isEspEnabled and boxStyle == "Corner" then
+            local boxWidth = viewport.AbsoluteSize.X * scale
+            local boxHeight = viewport.AbsoluteSize.Y * scale
+            local cornerLengthX = boxWidth * 0.25
+            local cornerLengthY = boxHeight * 0.25
+            local thickness = 2
+
+            cornerLines.TopLeft.Size = UDim2.new(0, cornerLengthX, 0, thickness)
+            cornerLines.TopLeft.Position = UDim2.new(0, 0, 0, 0)
+            cornerLines.TopRight.Size = UDim2.new(0, cornerLengthX, 0, thickness)
+            cornerLines.TopRight.Position = UDim2.new(0, boxWidth - cornerLengthX, 0, 0)
+            cornerLines.BottomLeft.Size = UDim2.new(0, cornerLengthX, 0, thickness)
+            cornerLines.BottomLeft.Position = UDim2.new(0, 0, 0, boxHeight - thickness)
+            cornerLines.BottomRight.Size = UDim2.new(0, cornerLengthX, 0, thickness)
+            cornerLines.BottomRight.Position = UDim2.new(0, boxWidth - cornerLengthX, 0, boxHeight - thickness)
+            cornerLines.LeftTop.Size = UDim2.new(0, thickness, 0, cornerLengthY)
+            cornerLines.LeftTop.Position = UDim2.new(0, 0, 0, 0)
+            cornerLines.RightTop.Size = UDim2.new(0, thickness, 0, cornerLengthY)
+            cornerLines.RightTop.Position = UDim2.new(0, boxWidth - thickness, 0, 0)
+            cornerLines.LeftBottom.Size = UDim2.new(0, thickness, 0, cornerLengthY)
+            cornerLines.LeftBottom.Position = UDim2.new(0, 0, 0, boxHeight - cornerLengthY)
+            cornerLines.RightBottom.Size = UDim2.new(0, thickness, 0, cornerLengthY)
+            cornerLines.RightBottom.Position = UDim2.new(0, boxWidth - thickness, 0, boxHeight - cornerLengthY)
+        end
+
+        cachedConfig.EspBox = Fatality.config.vars["EspBox"]
+        cachedConfig.BoxStyle = Fatality.config.vars["BoxStyle"]
+        cachedConfig.EspCol = Fatality.config.colors["EspCol"]
+        cachedConfig.EspColAlpha = Fatality.config.colors.alpha["EspCol"]
+        cachedConfig.Name = Fatality.config.vars["Name"]
+        cachedConfig.NameCol = Fatality.config.colors["NameCol"]
+        cachedConfig.NameColAlpha = Fatality.config.colors.alpha["NameCol"]
+        cachedConfig.TeamPlayer = Fatality.config.vars["TeamPlayer"]
+        cachedConfig.TeamCol = Fatality.config.colors["TeamCol"]
+        cachedConfig.TeamColAlpha = Fatality.config.colors.alpha["TeamCol"]
+        cachedConfig.WeaponPlayer = Fatality.config.vars["WeaponPlayer"]
+        cachedConfig.WepPlayerCol = Fatality.config.colors["WepPlayerCol"]
+        cachedConfig.WepPlayerColAlpha = Fatality.config.colors.alpha["WepPlayerCol"]
+        cachedConfig.DistancePlayer = Fatality.config.vars["DistancePlayer"]
+        cachedConfig.DistancePlayerCol = Fatality.config.colors["DistancePlayerCol"]
+        cachedConfig.DistancePlayerColAlpha = Fatality.config.colors.alpha["DistancePlayerCol"]
+        cachedConfig.HealthPlayer = Fatality.config.vars["HealthPlayer"]
+        cachedConfig.HealthPlayerCol = Fatality.config.colors["HealthPlayerCol"]
+        cachedConfig.HealthPlayerColAlpha = Fatality.config.colors.alpha["HealthPlayerCol"]
+        cachedConfig.HealthPlayerCol2 = Fatality.config.colors["HealthPlayerCol2"]
+        cachedConfig.HealthPlayerCol2Alpha = Fatality.config.colors.alpha["HealthPlayerCol2"]
+        cachedConfig.HealthPos = Fatality.config.vars["HealthPos"]
     end
+
+    local function checkConfigChanges()
+        if cachedConfig.EspBox ~= Fatality.config.vars["EspBox"] or
+           cachedConfig.BoxStyle ~= Fatality.config.vars["BoxStyle"] or
+           cachedConfig.EspCol ~= Fatality.config.colors["EspCol"] or
+           cachedConfig.EspColAlpha ~= Fatality.config.colors.alpha["EspCol"] or
+           cachedConfig.Name ~= Fatality.config.vars["Name"] or
+           cachedConfig.NameCol ~= Fatality.config.colors["NameCol"] or
+           cachedConfig.NameColAlpha ~= Fatality.config.colors.alpha["NameCol"] or
+           cachedConfig.TeamPlayer ~= Fatality.config.vars["TeamPlayer"] or
+           cachedConfig.TeamCol ~= Fatality.config.colors["TeamCol"] or
+           cachedConfig.TeamColAlpha ~= Fatality.config.colors.alpha["TeamCol"] or
+           cachedConfig.WeaponPlayer ~= Fatality.config.vars["WeaponPlayer"] or
+           cachedConfig.WepPlayerCol ~= Fatality.config.colors["WepPlayerCol"] or
+           cachedConfig.WepPlayerColAlpha ~= Fatality.config.colors.alpha["WepPlayerCol"] or
+           cachedConfig.DistancePlayer ~= Fatality.config.vars["DistancePlayer"] or
+           cachedConfig.DistancePlayerCol ~= Fatality.config.colors["DistancePlayerCol"] or
+           cachedConfig.DistancePlayerColAlpha ~= Fatality.config.colors.alpha["DistancePlayerCol"] or
+           cachedConfig.HealthPlayer ~= Fatality.config.vars["HealthPlayer"] or
+           cachedConfig.HealthPlayerCol ~= Fatality.config.colors["HealthPlayerCol"] or
+           cachedConfig.HealthPlayerColAlpha ~= Fatality.config.colors.alpha["HealthPlayerCol"] or
+           cachedConfig.HealthPlayerCol2 ~= Fatality.config.colors["HealthPlayerCol2"] or
+           cachedConfig.HealthPlayerCol2Alpha ~= Fatality.config.colors.alpha["HealthPlayerCol2"] or
+           cachedConfig.HealthPos ~= Fatality.config.vars["HealthPos"] then
+            updateEspStroke()
+        end
+    end
+
+    local function updateHealthAnimation()
+        if not Fatality.config.vars["HealthPlayer"] then return end
+        local time = tick()
+        local healthPerc = (math.sin(time * math.pi / 2) + 1) / 2
+        healthLabel.Text = tostring(math.floor(healthPerc * 100))
+        local color1 = Fatality.config.colors["HealthPlayerCol"]
+        local color2 = Fatality.config.colors["HealthPlayerCol2"] or Color3.new(0, 0, 0)
+        local alpha1 = Fatality.config.colors.alpha["HealthPlayerCol"] or 1
+        local alpha2 = Fatality.config.colors.alpha["HealthPlayerCol2"] or 1
+        local r = color1.R + (color2.R - color1.R) * (1 - healthPerc)
+        local g = color1.G + (color2.G - color1.G) * (1 - healthPerc)
+        local b = color1.B + (color2.B - color1.B) * (1 - healthPerc)
+        local alpha = alpha1 + (alpha2 - alpha1) * (1 - healthPerc)
+        local interpolatedColor = Color3.new(r, g, b)
+        healthLabel.TextColor3 = interpolatedColor
+        healthLabel.TextTransparency = 1 - alpha
+        healthSlider.BackgroundColor3 = interpolatedColor
+        healthSlider.BackgroundTransparency = 1 - alpha
+        healthSliderBG.BackgroundTransparency = 1 - alpha
+
+        local xOffset = Fatality.config.vars["HealthPos"] ~= 3 and -50 or 0
+        local height = espFrame.AbsoluteSize.Y
+        local sliderWidth, margin = 5, 5
+        local minX = -sliderWidth - margin
+        healthSliderBG.Position = UDim2.new(0, minX, 0, 0)
+        healthSliderBG.Size = UDim2.new(0, sliderWidth, 0, height)
+        local sliderHeight = height * healthPerc
+        local sliderY = height - sliderHeight
+        healthSlider.Position = UDim2.new(0, minX, 0, sliderY)
+        healthSlider.Size = UDim2.new(0, sliderWidth, 0, sliderHeight)
+        local healthY = sliderY - 5
+        healthLabel.Position = UDim2.new(0, minX + xOffset, 0, healthY)
+    end
+
+    Fatality.RunService.RenderStepped:Connect(checkConfigChanges)
+    Fatality.RunService.RenderStepped:Connect(updateHealthAnimation)
+    camera:GetPropertyChangedSignal("FieldOfView"):Connect(updateEspStroke)
+
+    local modelViewerFrame = Instance.new("Frame")
+    modelViewerFrame.Size = UDim2.new(0, 272, 0, 48)
+    modelViewerFrame.Position = UDim2.new(0.25, 0, -0.1, 0)
+    modelViewerFrame.BackgroundTransparency = 1
+    modelViewerFrame.ZIndex = 101
+    modelViewerFrame.Parent = viewerFrame
+
+    local outlineframe = Instance.new("Frame")
+    outlineframe.Size = UDim2.new(0.675, 1, 0.63, 0)
+    outlineframe.Position = UDim2.new(0.0, 0, 0.3, 0)
+    outlineframe.BackgroundColor3 = Color3.fromRGB(220, 220, 220)
+    outlineframe.BackgroundTransparency = 1
+    outlineframe.ZIndex = 100
+    outlineframe.Parent = modelViewerFrame
+
+    local borderStroke = Instance.new("UIStroke")
+    borderStroke.Thickness = 1
+    borderStroke.Color = Color3.fromRGB(29, 23, 60)
+    borderStroke.Parent = outlineframe
 
     local isHovering = false
-    local selectedMode = "Local"
+    local isOpen = false
 
-    local function updateVisual()
-        local targetColor = isHovering and Color3.fromRGB(195, 44, 95) or Color3.fromRGB(29, 23, 60)
+    local function tweenColor(stroke, targetColor)
         local tweenInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        local tween = Fatality.TweenService:Create(stroke, tweenInfo, {Color = targetColor})
+        tween:Play()
     end
 
-    local function updateButtonColors()
-        local buttons = {localButton, enemyButton, entityButton}
-        for _, btn in ipairs(buttons) do
-            local isActive = btn.Text == selectedMode
-            btn.TextColor3 = isActive and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(220, 220, 220)
-            local line = btn:FindFirstChild("ActiveLine")
-            if line then
-                if isActive then
-                    local expandTween = Fatality.TweenService:Create(line, TweenInfo.new(0.4), {Size = UDim2.new(0, btn.TextBounds.X, 0, 2), Position = UDim2.new(0.5, -btn.TextBounds.X/2, 1, 0), Transparency = 0})
-                    expandTween:Play()
-                else
-                    local shrinkTween = Fatality.TweenService:Create(line, TweenInfo.new(0.3), {Size = UDim2.new(0, 0, 0, 2), Position = UDim2.new(0.5, 0, 1, 0), Transparency = 1})
-                    shrinkTween:Play()
-                    shrinkTween.Completed:Connect(function()
-                        line:Destroy()
-                    end)
-                end
-            end
-            if isActive and not line then
-                local newActiveLine = Instance.new("Frame")
-                newActiveLine.Name = "ActiveLine"
-                newActiveLine.Size = UDim2.new(0, 0, 0, 2)
-                newActiveLine.Position = UDim2.new(0.5, 0, 1, 0)
-                newActiveLine.BackgroundColor3 = Color3.fromRGB(195, 44, 95)
-                newActiveLine.ZIndex = 151
-                newActiveLine.Parent = btn
-                local expandTween = Fatality.TweenService:Create(newActiveLine, TweenInfo.new(0.4), {Size = UDim2.new(0, btn.TextBounds.X, 0, 2), Position = UDim2.new(0.5, -btn.TextBounds.X/2, 1, 0), Transparency = 0})
-                expandTween:Play()
-            end
+    local function updateStrokeColor()
+        if isHovering or isOpen then
+            tweenColor(borderStroke, Color3.fromRGB(195, 44, 95))
+        else
+            tweenColor(borderStroke, Color3.fromRGB(29, 23, 60))
         end
     end
 
-    updateVisual()
-    updateButtonColors()
-
-    viewport.MouseEnter:Connect(function()
+    outlineframe.MouseEnter:Connect(function()
+        if Fatality.ui.ColorPanel then return end
         isHovering = true
-        updateVisual()
+        updateStrokeColor()
     end)
-
-    viewport.MouseLeave:Connect(function()
+    outlineframe.MouseLeave:Connect(function()
         isHovering = false
-        updateVisual()
+        updateStrokeColor()
     end)
 
-    local function updateModel(mode, force)
-        if not viewport or not worldModel then
-            return
-        end
+    local dropdown = Instance.new("TextButton")
+    dropdown.Size = UDim2.new(0.65, 0, 0.5, 0)
+    dropdown.Position = UDim2.new(0.01, 0, 0.37, 0)
+    dropdown.BackgroundColor3 = Color3.fromRGB(29, 23, 60)
+    dropdown.Font = Enum.Font.GothamBold
+    dropdown.TextColor3 = Color3.fromRGB(220, 220, 220)
+    dropdown.TextSize = 15
+    dropdown.TextXAlignment = Enum.TextXAlignment.Left
+    dropdown.ZIndex = 101
+    dropdown.Parent = modelViewerFrame
 
-        if not force and selectedMode == mode then
-            return
-        end
+    local arrowBackground = Instance.new("Frame")
+    arrowBackground.Size = UDim2.new(0.16, 0, 1, 0)
+    arrowBackground.Position = UDim2.new(0.85, 0, 0.0, 0)
+    arrowBackground.BackgroundTransparency = 0
+    arrowBackground.BackgroundColor3 = Color3.fromRGB(195, 44, 95)
+    arrowBackground.ZIndex = 103
+    arrowBackground.Parent = dropdown
 
+    local arrow = Instance.new("TextLabel")
+    arrow.Size = UDim2.new(1, 0, 1, 0)
+    arrow.Position = UDim2.new(0, 0, -0.1, 0)
+    arrow.BackgroundTransparency = 1
+    arrow.Text = "▼"
+    arrow.TextColor3 = Color3.fromRGB(220, 220, 220)
+    arrow.Font = Enum.Font.GothamBold
+    arrow.TextSize = 25
+    arrow.ZIndex = 104
+    arrow.Parent = arrowBackground
+
+    local options = {"Enemy", "Entity"}
+    local selectedMode = options[1]
+
+    local blackSquare = Instance.new("Frame")
+    blackSquare.Size = UDim2.new(0.3, 0, 1, 0)
+    blackSquare.Position = UDim2.new(0.65, 0, 0, 0)
+    blackSquare.Visible = false
+    blackSquare.ZIndex = 102
+    blackSquare.Parent = dropdown
+
+    local gradient = Instance.new("UIGradient")
+    gradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(25, 25, 25)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 0))
+    })
+    gradient.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 1),
+        NumberSequenceKeypoint.new(1, 0)
+    })
+    gradient.Parent = blackSquare
+
+    local function anpassText(text, maxWidth, filler)
+        local textWidth = game:GetService("TextService"):GetTextSize(text, 13, Enum.Font.GothamBold, Vector2.new(math.huge, 15)).X
+        if textWidth <= maxWidth then
+            return "  " .. text, false
+        end
+        for i = #text, 1, -1 do
+            local shortened = text:sub(1, i) .. filler
+            if game:GetService("TextService"):GetTextSize(shortened, 13, Enum.Font.GothamBold, Vector2.new(math.huge, 15)).X <= maxWidth then
+                return "  " .. shortened, true
+            end
+        end
+        return "  " .. filler, true
+    end
+
+    local optionButtons = {}
+
+    local function updateModel(mode)
         for _, child in ipairs(worldModel:GetChildren()) do
             if child:IsA("Model") then
                 child:Destroy()
             end
         end
-
         for _, child in ipairs(viewport:GetChildren()) do
-            if child:IsA("TextLabel") then
+            if child:IsA("TextLabel") and child ~= espFrame then
                 child:Destroy()
             end
         end
-
-        selectedMode = mode
-        updateButtonColors()
-
         local success, result = pcall(function()
-            if mode == "Local" then
-                local player = Fatality.LocalPlayer
-                if not player then
-                    return
-                end
-                local character = player.Character
-                if not character then
-                    local notFoundLabel = Instance.new("TextLabel")
-                    notFoundLabel.Size = UDim2.new(0.9, 0, 0.5, 0)
-                    notFoundLabel.Position = UDim2.new(0.05, 0, 0.25, 0)
-                    notFoundLabel.BackgroundTransparency = 1
-                    notFoundLabel.Text = "Model Not Found"
-                    notFoundLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-                    notFoundLabel.Font = Enum.Font.GothamBold
-                    notFoundLabel.TextSize = 16
-                    notFoundLabel.ZIndex = 101
-                    notFoundLabel.Parent = viewport
-                    return
-                end
-                if character and character:FindFirstChildOfClass("Humanoid") and character.PrimaryPart then
-                    local wasArchivable = character.Archivable
-                    character.Archivable = true
-                    local modelClone = character:Clone()
-                    character.Archivable = wasArchivable
-                    if modelClone then
-                        modelClone.Parent = worldModel
-                        local humanoid = modelClone:FindFirstChildOfClass("Humanoid")
-                        if humanoid then
-                            humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
-                            if modelClone.PrimaryPart then
-                                modelClone:SetPrimaryPartCFrame(CFrame.new(Vector3.new(0, 2.2, 0), Vector3.new(0, 2, 4.8)))
-                            end
-                        else
-                            modelClone:Destroy()
-                        end
-                    end
-                end
-            elseif mode == "Enemy" then
+            local modelClone
+            local displayName = name
+            local teamName = "No Team"
+            local weaponName = "No Tool"
+            if mode == "Enemy" then
                 local players = game.Players:GetPlayers()
                 local otherPlayers = {}
                 for _, p in ipairs(players) do
@@ -2181,15 +2438,12 @@ function Fatality.ui.ModelViewer(name, parent)
                     local randomPlayer = otherPlayers[math.random(1, #otherPlayers)]
                     local character = randomPlayer.Character
                     if character then
-                        if not character:FindFirstChildOfClass("Humanoid") then
-                            return
-                        end
-                        if not character.PrimaryPart then
+                        if not character:FindFirstChildOfClass("Humanoid") or not character.PrimaryPart then
                             return
                         end
                         local wasArchivable = character.Archivable
                         character.Archivable = true
-                        local modelClone = character:Clone()
+                        modelClone = character:Clone()
                         character.Archivable = wasArchivable
                         if modelClone then
                             modelClone.Parent = worldModel
@@ -2201,33 +2455,282 @@ function Fatality.ui.ModelViewer(name, parent)
                                 end
                             else
                                 modelClone:Destroy()
+                                modelClone = nil
                             end
+                            displayName = randomPlayer.Name
+                            teamName = randomPlayer.Team and randomPlayer.Team.Name or "No Team"
+                            local tool = character:FindFirstChildOfClass("Tool")
+                            weaponName = tool and tool.Name or "No Tool"
                         end
                     end
                 end
+            elseif mode == "Entity" then
+                local entityTemplate = game.ReplicatedStorage:FindFirstChild("Entities") and game.ReplicatedStorage.Entities:FindFirstChild("DefaultEntity")
+                if entityTemplate then
+                    modelClone = entityTemplate:Clone()
+                    if modelClone then
+                        modelClone.Parent = worldModel
+                        local humanoid = modelClone:FindFirstChildOfClass("Humanoid")
+                        if humanoid then
+                            humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+                        end
+                        if modelClone.PrimaryPart then
+                            modelClone:SetPrimaryPartCFrame(CFrame.new(Vector3.new(0, 2.2, 0), Vector3.new(0, 2, 4.8)))
+                        else
+                            modelClone:Destroy()
+                            modelClone = nil
+                        end
+                        displayName = "Entity"
+                        teamName = "No Team"
+                        weaponName = "No Tool"
+                    end
+                end
+            end
+            nameLabel.Text = displayName or name
+            teamLabel.Text = teamName
+            weaponLabel.Text = weaponName
+            if modelClone and modelClone.PrimaryPart then
+                local modelCFrame, modelSize = modelClone:GetBoundingBox()
+                local maxSize = math.max(modelSize.X, modelSize.Y, modelSize.Z)
+                local viewportSize = viewport.AbsoluteSize
+                local aspectRatio = viewportSize.X / viewportSize.Y
+                local fov = math.deg(2 * math.atan(maxSize * 2 / (2 * 4.8) * aspectRatio))
+                camera.FieldOfView = math.clamp(fov, 10, 150)
+                updateEspStroke()
+            else
+                local notFoundLabel = Instance.new("TextLabel")
+                notFoundLabel.Size = UDim2.new(0.9, 0, 0.5, 0)
+                notFoundLabel.Position = UDim2.new(0.05, 0, 0.25, 0)
+                notFoundLabel.BackgroundTransparency = 1
+                notFoundLabel.Text = "Model Not Found"
+                notFoundLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+                notFoundLabel.Font = Enum.Font.GothamBold
+                notFoundLabel.TextSize = 16
+                notFoundLabel.ZIndex = 101
+                notFoundLabel.Parent = viewport
+                nameLabel.Text = name
+                teamLabel.Text = "No Team"
+                weaponLabel.Text = "No Tool"
             end
         end)
     end
 
-    localButton.MouseButton1Click:Connect(function()
-        updateModel("Local")
-    end)
-
-    enemyButton.MouseButton1Click:Connect(function()
-        updateModel("Enemy")
-    end)
-
-    entityButton.MouseButton1Click:Connect(function()
-        updateModel("Entity")
-    end)
-    --[[
-    if not Fatality.ui.AllModelViewers then
-        Fatality.ui.AllModelViewers = {}
+    local function updateDisplay()
+        local displayText, isShortened = anpassText(selectedMode, dropdown.AbsoluteSize.X * 0.8, " ")
+        dropdown.Text = displayText
+        blackSquare.Visible = isShortened
+        for _, btn in ipairs(optionButtons) do
+            local opt = btn:GetAttribute("Option")
+            local isSelected = (opt == selectedMode)
+            btn.TextColor3 = isSelected and Color3.fromRGB(195, 44, 95) or Color3.fromRGB(220, 220, 220)
+        end
+        updateModel(selectedMode)
     end
-    table.insert(Fatality.ui.AllModelViewers, function() updateModel(selectedMode) end)
-    --]]
-    updateModel("Local", true)
 
+    updateDisplay()
+
+    local optionsFrame = Instance.new("Frame")
+    optionsFrame.Size = UDim2.new(0.6575, 0, 0.25, 0)
+    optionsFrame.Position = UDim2.new(0.0175, 0, 0.93, 0)
+    optionsFrame.BackgroundColor3 = Color3.fromRGB(20, 15, 45)
+    optionsFrame.Visible = false
+    optionsFrame.ZIndex = 103
+    optionsFrame.BackgroundTransparency = 1
+    optionsFrame.Parent = modelViewerFrame
+
+    local FoptionsFrame = Instance.new("Frame")
+    FoptionsFrame.Size = UDim2.new(0.6575, 0, #options * 0.56, 0)
+    FoptionsFrame.Position = UDim2.new(0.0175, 0, 0.93, 0)
+    FoptionsFrame.BackgroundColor3 = Color3.fromRGB(21, 15, 45)
+    FoptionsFrame.Visible = false
+    FoptionsFrame.ZIndex = 104
+    FoptionsFrame.Parent = modelViewerFrame
+
+    local layout = Instance.new("UIListLayout")
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+    layout.Parent = optionsFrame
+
+    for _, opt in ipairs(options) do
+        local optButton = Instance.new("TextButton")
+        optButton.Size = UDim2.new(1, 0, 2.25, 0)
+        optButton.BackgroundTransparency = 0.5
+        optButton.BackgroundColor3 = Color3.fromRGB(20, 15, 45)
+        optButton.Font = Enum.Font.GothamBold
+        optButton.TextSize = 13
+        optButton.TextXAlignment = Enum.TextXAlignment.Left
+        optButton.ClipsDescendants = true
+        optButton.ZIndex = 105
+        optButton.Parent = optionsFrame
+        optButton:SetAttribute("Option", opt)
+        optButton.Text = anpassText(opt, optButton.AbsoluteSize.X * 0.95, "...")
+
+        local function updateButtonStyle()
+            local isSelected = (opt == selectedMode)
+            optButton.TextColor3 = isSelected and Color3.fromRGB(195, 44, 95) or Color3.fromRGB(220, 220, 220)
+        end
+
+        updateButtonStyle()
+
+        optButton.MouseEnter:Connect(function()
+            if Fatality.ui.ColorPanel then return end
+            local isSelected = (opt == selectedMode)
+            if isSelected then
+                optButton.TextColor3 = Color3.fromRGB(150, 22, 49)
+            else
+                optButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+            end
+        end)
+
+        optButton.MouseLeave:Connect(function()
+            updateButtonStyle()
+        end)
+
+        optButton.MouseButton1Click:Connect(function()
+            if Fatality.ui.ColorPanel then return end
+            selectedMode = opt
+            updateDisplay()
+            optionsFrame.Visible = false
+            FoptionsFrame.Visible = false
+            optionsFrame.Parent = modelViewerFrame
+            FoptionsFrame.Parent = modelViewerFrame
+            isOpen = false
+            updateStrokeColor()
+            arrow.Text = "▼"
+        end)
+
+        table.insert(optionButtons, optButton)
+    end
+
+    if not Fatality.ui.DropdownContainer then
+        local screenGui = parent
+        while screenGui and not screenGui:IsA("ScreenGui") do
+            screenGui = screenGui.Parent
+        end
+        if screenGui then
+            Fatality.ui.DropdownContainer = Instance.new("Frame")
+            Fatality.ui.DropdownContainer.Size = UDim2.new(1, 0, 1, 0)
+            Fatality.ui.DropdownContainer.Position = UDim2.new(0, 0, 0, 0)
+            Fatality.ui.DropdownContainer.BackgroundTransparency = 1
+            Fatality.ui.DropdownContainer.ClipsDescendants = false
+            Fatality.ui.DropdownContainer.ZIndex = 99
+            Fatality.ui.DropdownContainer.Name = "DropdownContainer"
+            Fatality.ui.DropdownContainer.Parent = screenGui
+        end
+    end
+
+    local function updateDropdownPosition()
+        if isOpen and Fatality.ui.DropdownContainer then
+            local comboAbsPos = modelViewerFrame.AbsolutePosition
+            local comboAbsSize = modelViewerFrame.AbsoluteSize
+            local offsetX = comboAbsPos.X + (comboAbsSize.X * 0.013)
+            local offsetY = comboAbsPos.Y + (comboAbsSize.Y * 2.1)
+            local optionsWidth = comboAbsSize.X * 0.6575
+            local optionsHeight = comboAbsSize.Y * 0.25
+            local fOptionsHeight = comboAbsSize.Y * (#options * 0.56)
+
+            optionsFrame.Size = UDim2.new(0, optionsWidth, 0, optionsHeight)
+            FoptionsFrame.Size = UDim2.new(0, optionsWidth, 0, fOptionsHeight)
+            optionsFrame.Position = UDim2.new(0, offsetX, 0, offsetY)
+            FoptionsFrame.Position = UDim2.new(0, offsetX, 0, offsetY)
+            optionsFrame.Visible = isOpen
+            FoptionsFrame.Visible = isOpen
+        end
+    end
+
+    if not Fatality.ui.ActiveComboBoxes then
+        Fatality.ui.ActiveComboBoxes = {}
+    end
+
+    local function closeComboBox()
+        if isOpen then
+            optionsFrame.Visible = false
+            FoptionsFrame.Visible = false
+            optionsFrame.Parent = modelViewerFrame
+            FoptionsFrame.Parent = modelViewerFrame
+            optionsFrame.Size = UDim2.new(0.6575, 0, 0.25, 0)
+            FoptionsFrame.Size = UDim2.new(0.6575, 0, #options * 0.56, 0)
+            optionsFrame.Position = UDim2.new(0.0175, 0, 0.93, 0)
+            FoptionsFrame.Position = UDim2.new(0.0175, 0, 0.93, 0)
+            isOpen = false
+            arrow.Text = "▼"
+            updateStrokeColor()
+        end
+    end
+
+    local comboBoxData = {
+        comboFrame = modelViewerFrame,
+        isOpen = function() return isOpen end,
+        setOpen = function(value) isOpen = value end,
+        optionsFrame = optionsFrame,
+        FoptionsFrame = FoptionsFrame,
+        arrow = arrow,
+        updateStrokeColor = updateStrokeColor,
+        close = closeComboBox
+    }
+    table.insert(Fatality.ui.ActiveComboBoxes, comboBoxData)
+
+    dropdown.MouseButton1Click:Connect(function()
+        if Fatality.ui.ColorPanel then return end
+        for _, otherComboBox in ipairs(Fatality.ui.ActiveComboBoxes) do
+            if otherComboBox.comboFrame ~= modelViewerFrame and otherComboBox.isOpen() then
+                otherComboBox.close()
+            end
+        end
+
+        isOpen = not isOpen
+        if isOpen and Fatality.ui.DropdownContainer then
+            optionsFrame.Parent = Fatality.ui.DropdownContainer
+            FoptionsFrame.Parent = Fatality.ui.DropdownContainer
+            updateDropdownPosition()
+        else
+            optionsFrame.Parent = modelViewerFrame
+            FoptionsFrame.Parent = modelViewerFrame
+            optionsFrame.Size = UDim2.new(0.6575, 0, 0.25, 0)
+            FoptionsFrame.Size = UDim2.new(0.6575, 0, #options * 0.56, 0)
+            optionsFrame.Position = UDim2.new(0.0175, 0, 0.93, 0)
+            FoptionsFrame.Position = UDim2.new(0.0175, 0, 0.93, 0)
+            optionsFrame.Visible = false
+            FoptionsFrame.Visible = false
+        end
+        arrow.Text = isOpen and "▲" or "▼"
+        updateStrokeColor()
+    end)
+
+    local scrollFrame = viewerFrame.Parent
+    if scrollFrame and scrollFrame:IsA("ScrollingFrame") then
+        scrollFrame:GetPropertyChangedSignal("CanvasPosition"):Connect(function()
+            if isOpen then
+                optionsFrame.Visible = false
+                FoptionsFrame.Visible = false
+                isOpen = false
+                arrow.Text = "▼"
+                updateStrokeColor()
+            end
+        end)
+    end
+
+    if Menuframe then
+        Menuframe:GetPropertyChangedSignal("Visible"):Connect(function()
+            if isOpen and not Menuframe.Visible then
+                optionsFrame.Visible = false
+                FoptionsFrame.Visible = false
+                optionsFrame.Parent = modelViewerFrame
+                FoptionsFrame.Parent = modelViewerFrame
+                optionsFrame.Size = UDim2.new(0.6575, 0, 0.25, 0)
+                FoptionsFrame.Size = UDim2.new(0.6575, 0, #options * 0.56, 0)
+                optionsFrame.Position = UDim2.new(0.0175, 0, 0.93, 0)
+                FoptionsFrame.Position = UDim2.new(0.0175, 0, 0.93, 0)
+                isOpen = false
+                arrow.Text = "▼"
+                updateStrokeColor()
+            end
+        end)
+    end
+
+    if not Fatality.ui.AllComboBoxes then
+        Fatality.ui.AllComboBoxes = {}
+    end
+    table.insert(Fatality.ui.AllComboBoxes, updateDisplay)
     return viewerFrame
 end
 
@@ -2668,6 +3171,14 @@ local VisualItemPanels = {
                     --{ Type = "CheckBox", Text = "Player Line", Var = "PlayerLine"},
                     --{ Type = "ComboBox", Text = "Line Style", Var = "PlayerLineStyle", Options = {"RGB Lenta", "⚧Slave⚧"} },
                 }
+            },
+            {
+                Name = "Model Viewer",
+                Height = 486,
+                Pal = 3,
+                Items = {
+                    { Type = "ModelViewer", Text = "Player Model" }
+                }
             }
         }
     },
@@ -2686,14 +3197,6 @@ local VisualItemPanels = {
                     { Type = "ComboBox", Text = "Chams Materials Inv", Var = "ChamsMaterialsInv", Options = {"Flat", "Outline", "Glow", "Transparent", "Pulsating"} }
                 }
             },
-            {
-                Name = "Model Viewer",
-                Height = 486,
-                Pal = 3,
-                Items = {
-                    { Type = "ModelViewer", Text = "Player Model" }
-                }
-            }
         }
     }
 }
@@ -3074,7 +3577,7 @@ local spinning = false
 local teleporting = false
 local spinConnection = nil
 local bodyAngularVelocity = nil
-local spinSpeed = 999
+local spinSpeed = 100
 local originalMass = {}
 
 local function setMyCollision(character, canCollide)
@@ -3944,7 +4447,7 @@ local function CreateESPBox(player)
     local box = {TopLeft = Drawing.new("Line"),TopRight = Drawing.new("Line"),BottomLeft = Drawing.new("Line"),BottomRight = Drawing.new("Line"),Left = Drawing.new("Line"),Right = Drawing.new("Line"),Top = Drawing.new("Line"),Bottom = Drawing.new("Line"),BackTopLeft = Drawing.new("Line"),BackTopRight = Drawing.new("Line"),BackBottomLeft = Drawing.new("Line"),BackBottomRight = Drawing.new("Line")}
     for _, line in pairs(box) do
         line.Visible = false
-        line.Color = Fatality.config.colors["EspCol"] or Color3.new(1, 1, 1)
+        line.Color = Fatality.config.colors["EspCol"] 
         line.Transparency = Fatality.config.colors.alpha["EspCol"]
         line.Thickness = 2
         line.ZIndex = 2
@@ -3956,8 +4459,8 @@ local function CreateESPBox(player)
 
     local nameLabel = Instance.new("TextLabel")
     nameLabel.BackgroundTransparency = 1
-    nameLabel.TextColor3 = Fatality.config.colors["NameCol"] or Color3.new(1, 1, 1)
-    nameLabel.TextTransparency = 1 - (Fatality.config.colors.alpha["NameCol"] or 1)
+    nameLabel.TextColor3 = Fatality.config.colors["NameCol"] 
+    nameLabel.TextTransparency = 1 - Fatality.config.colors.alpha["NameCol"]
     nameLabel.TextStrokeTransparency = 0
     nameLabel.TextSize = 14
     nameLabel.Font = Enum.Font.Ubuntu
@@ -3968,8 +4471,8 @@ local function CreateESPBox(player)
 
     local healthLabel = Instance.new("TextLabel")
     healthLabel.BackgroundTransparency = 1
-    healthLabel.TextColor3 = Fatality.config.colors["HealthPlayerCol"] or Color3.new(0, 1, 0)
-    healthLabel.TextTransparency = 1 - (Fatality.config.colors.alpha["HealthPlayerCol"] or 1)
+    healthLabel.TextColor3 = Fatality.config.colors["HealthPlayerCol"] 
+    healthLabel.TextTransparency = 1 - Fatality.config.colors.alpha["HealthPlayerCol"] 
     healthLabel.TextStrokeTransparency = 0
     healthLabel.TextSize = 14
     healthLabel.Font = Enum.Font.Ubuntu
@@ -3980,8 +4483,8 @@ local function CreateESPBox(player)
 
     local teamLabel = Instance.new("TextLabel")
     teamLabel.BackgroundTransparency = 1
-    teamLabel.TextColor3 = Fatality.config.colors["TeamCol"] or Color3.new(1, 1, 0)
-    teamLabel.TextTransparency = 1 - (Fatality.config.colors.alpha["TeamCol"] or 1)
+    teamLabel.TextColor3 = Fatality.config.colors["TeamCol"] 
+    teamLabel.TextTransparency = 1 - Fatality.config.colors.alpha["TeamCol"]
     teamLabel.TextStrokeTransparency = 0
     teamLabel.TextSize = 14
     teamLabel.Font = Enum.Font.Ubuntu
@@ -3992,8 +4495,8 @@ local function CreateESPBox(player)
 
     local weaponLabel = Instance.new("TextLabel")
     weaponLabel.BackgroundTransparency = 1
-    weaponLabel.TextColor3 = Fatality.config.colors["WepPlayerCol"] or Color3.new(1, 0, 1)
-    weaponLabel.TextTransparency = 1 - (Fatality.config.colors.alpha["WepPlayerCol"] or 1)
+    weaponLabel.TextColor3 = Fatality.config.colors["WepPlayerCol"] 
+    weaponLabel.TextTransparency = 1 - Fatality.config.colors.alpha["WepPlayerCol"]
     weaponLabel.TextStrokeTransparency = 0
     weaponLabel.TextSize = 14
     weaponLabel.Font = Enum.Font.Ubuntu
@@ -4004,8 +4507,8 @@ local function CreateESPBox(player)
 
     local distanceLabel = Instance.new("TextLabel")
     distanceLabel.BackgroundTransparency = 1
-    distanceLabel.TextColor3 = Fatality.config.colors["DistancePlayerCol"] or Color3.new(0, 1, 1)
-    distanceLabel.TextTransparency = 1 - (Fatality.config.colors.alpha["DistancePlayerCol"] or 1)
+    distanceLabel.TextColor3 = Fatality.config.colors["DistancePlayerCol"] 
+    distanceLabel.TextTransparency = 1 - Fatality.config.colors.alpha["DistancePlayerCol"]
     distanceLabel.TextStrokeTransparency = 0
     distanceLabel.TextSize = 14
     distanceLabel.Font = Enum.Font.Ubuntu
@@ -4016,7 +4519,7 @@ local function CreateESPBox(player)
 
     local healthSliderBG = Instance.new("Frame")
     healthSliderBG.BackgroundColor3 = Color3.fromRGB(56, 56, 56)
-    healthSliderBG.BackgroundTransparency = 1 - (Fatality.config.colors.alpha["HealthPlayerCol"] or 1)
+    healthSliderBG.BackgroundTransparency = 1 - Fatality.config.colors.alpha["HealthPlayerCol"]
     healthSliderBG.Visible = false
     healthSliderBG.Size = UDim2.new(0, 5, 0, 0)
     healthSliderBG.Position = UDim2.new(0, 0, 0, 0)
@@ -4024,8 +4527,8 @@ local function CreateESPBox(player)
     healthSliderBG.Parent = screenGui
 
     local healthSlider = Instance.new("Frame")
-    healthSlider.BackgroundColor3 = Fatality.config.colors["HealthPlayerCol"] or Color3.new(0, 1, 0)
-    healthSlider.BackgroundTransparency = 1 - (Fatality.config.colors.alpha["HealthPlayerCol"] or 1)
+    healthSlider.BackgroundColor3 = Fatality.config.colors["HealthPlayerCol"] 
+    healthSlider.BackgroundTransparency = 1 - Fatality.config.colors.alpha["HealthPlayerCol"]
     healthSlider.Visible = false
     healthSlider.Size = UDim2.new(0, 5, 0, 0)
     healthSlider.Position = UDim2.new(0, 0, 0, 0)
@@ -4039,9 +4542,7 @@ local function UpdateESP()
     local lastUpdate = tick()
     RunService.RenderStepped:Connect(function()
         local updateInterval = Fatality.config.vars["ESPUpdateInterval"] / 1000
-        if not (Fatality.config.vars["EspBox"] or Fatality.config.vars["Name"] or
-                Fatality.config.vars["HealthPlayer"] or Fatality.config.vars["WeaponPlayer"] or
-                Fatality.config.vars["TeamPlayer"] or Fatality.config.vars["alphaPlayer"]) then
+        if not (Fatality.config.vars["EspBox"] or Fatality.config.vars["Name"] or Fatality.config.vars["HealthPlayer"] or Fatality.config.vars["WeaponPlayer"] or Fatality.config.vars["TeamPlayer"] or Fatality.config.vars["DistancePlayer"]) then
             for _, elements in pairs(ESP_Boxes) do
                 for _, line in pairs(elements.box) do line.Visible = false end
                 elements.nameLabel.Visible = false
@@ -4115,7 +4616,7 @@ local function UpdateESP()
                 local boxWidth = screenBox.maxX - screenBox.minX
                 local boxHeight = screenBox.maxY - screenBox.minY
                 local boxPosition = Vector2.new(screenBox.minX, screenBox.minY)
-                local boxColor = Fatality.config.colors["EspCol"] or Color3.new(1, 1, 1)
+                local boxColor = Fatality.config.colors["EspCol"] 
                 local boxAlpha = Fatality.config.colors.alpha["EspCol"] 
                 for _, line in pairs(box) do line.Visible = false end
                 if Fatality.config.vars["BoxStyle"] == "Box 3D" then
@@ -4263,8 +4764,8 @@ local function UpdateESP()
                 end
                 local xOffset = Fatality.config.vars["NamePos"] ~= 3 and -50 or 0
                 nameLabel.Position = UDim2.new(0, textPositions[1].X + xOffset, 0, textPositions[1].Y)
-                nameLabel.TextColor3 = Fatality.config.colors["NameCol"] or Color3.new(1, 1, 1)
-                nameLabel.TextTransparency = 1 - (Fatality.config.colors.alpha["NameCol"] or 1)
+                nameLabel.TextColor3 = Fatality.config.colors["NameCol"] 
+                nameLabel.TextTransparency = 1 - Fatality.config.colors.alpha["NameCol"]
                 nameLabel.Visible = true
             else
                 nameLabel.Visible = false
@@ -4275,10 +4776,10 @@ local function UpdateESP()
                     elements.lastHealth = textContents[2]
                 end
                 local healthPerc = math.clamp(humanoid.Health / humanoid.MaxHealth, 0, 1)
-                local color1 = Fatality.config.colors["HealthPlayerCol"] or Color3.new(0, 1, 0)
-                local color2 = Fatality.config.colors["HealthPlayerCol2"] or Color3.new(1, 0, 0)
-                local alpha1 = Fatality.config.colors.alpha["HealthPlayerCol"] or 1
-                local alpha2 = Fatality.config.colors.alpha["HealthPlayerCol2"] or 1
+                local color1 = Fatality.config.colors["HealthPlayerCol"] 
+                local color2 = Fatality.config.colors["HealthPlayerCol2"]
+                local alpha1 = Fatality.config.colors.alpha["HealthPlayerCol"] 
+                local alpha2 = Fatality.config.colors.alpha["HealthPlayerCol2"] 
                 local r = color1.R + (color2.R - color1.R) * (1 - healthPerc)
                 local g = color1.G + (color2.G - color1.G) * (1 - healthPerc)
                 local b = color1.B + (color2.B - color1.B) * (1 - healthPerc)
@@ -4315,8 +4816,8 @@ local function UpdateESP()
                 end
                 local xOffset = Fatality.config.vars["WepPlayerPos"] ~= 3 and -50 or 0
                 weaponLabel.Position = UDim2.new(0, textPositions[3].X + xOffset, 0, textPositions[3].Y)
-                weaponLabel.TextColor3 = Fatality.config.colors["WepPlayerCol"] or Color3.new(1, 0, 1)
-                weaponLabel.TextTransparency = 1 - (Fatality.config.colors.alpha["WepPlayerCol"] or 1)
+                weaponLabel.TextColor3 = Fatality.config.colors["WepPlayerCol"] 
+                weaponLabel.TextTransparency = 1 - Fatality.config.colors.alpha["WepPlayerCol"]
                 weaponLabel.Visible = true
             else
                 weaponLabel.Visible = false
@@ -4328,8 +4829,8 @@ local function UpdateESP()
                 end
                 local xOffset = Fatality.config.vars["TeamPos"] ~= 3 and -50 or 0
                 teamLabel.Position = UDim2.new(0, textPositions[4].X + xOffset, 0, textPositions[4].Y)
-                teamLabel.TextColor3 = Fatality.config.colors["TeamCol"] or Color3.new(1, 1, 0)
-                teamLabel.TextTransparency = 1 - (Fatality.config.colors.alpha["TeamCol"] or 1)
+                teamLabel.TextColor3 = Fatality.config.colors["TeamCol"] 
+                teamLabel.TextTransparency = 1 - Fatality.config.colors.alpha["TeamCol"]
                 teamLabel.Visible = true
             else
                 teamLabel.Visible = false
@@ -4341,8 +4842,8 @@ local function UpdateESP()
                 end
                 local xOffset = Fatality.config.vars["DistancePlayerPos"] ~= 3 and -50 or 0
                 distanceLabel.Position = UDim2.new(0, textPositions[5].X + xOffset, 0, textPositions[5].Y)
-                distanceLabel.TextColor3 = Fatality.config.colors["DistancePlayerCol"] or Color3.new(0, 1, 1)
-                distanceLabel.TextTransparency = 1 - (Fatality.config.colors.alpha["DistancePlayerCol"] or 1)
+                distanceLabel.TextColor3 = Fatality.config.colors["DistancePlayerCol"] 
+                distanceLabel.TextTransparency = 1 - Fatality.config.colors.alpha["DistancePlayerCol"]
                 distanceLabel.Visible = true
             else
                 distanceLabel.Visible = false
@@ -4808,6 +5309,21 @@ if Fatality.LocalPlayer.Character then
 end
 Fatality.RunService.RenderStepped:Connect(function()
     updateHat()
+end)
+
+
+
+local camera = Fatality.LocalCamera
+local lastFOVSlider = Fatality.config.vars["FOVViewSlider"] 
+
+camera.FieldOfView = lastFOVSlider
+
+Fatality.RunService.RenderStepped:Connect(function()
+    local currentFOVSlider = Fatality.config.vars["FOVViewSlider"]
+    if currentFOVSlider ~= lastFOVSlider then
+        camera.FieldOfView = currentFOVSlider
+        lastFOVSlider = currentFOVSlider
+    end
 end)
 
 
