@@ -1,24 +1,36 @@
-local Fatality = {}
+﻿local Fatality = {}
 Fatality.tabs = {}
 Fatality.ui = {}
 Fatality.config = { vars = {}, binds = {}, colors = {} }
 local security = true
 
-Fatality.LocalPlayer = game.Players.LocalPlayer
+local function ChekerFatality(name, func)
+    local obj, timeout, startTime = func(), 5, tick()
+    while not obj and tick() - startTime < timeout do task.wait() obj = func() end
+    return obj or warn("Не удалось получить " .. name) and nil
+end
+
+Fatality.LocalPlayer = ChekerFatality("LocalPlayer", function()
+    local p = game:GetService("Players").LocalPlayer
+    if p then return p end
+    local c c = game:GetService("Players").PlayerAdded:Connect(function(plr) if plr == game:GetService("Players").LocalPlayer then p = plr c:Disconnect() end end)
+    return p
+end)
+
 Fatality.gui = Instance.new("ScreenGui")
-Fatality.UserInputService = game:GetService("UserInputService")
+Fatality.UserInputService = ChekerFatality("UserInputService", function() return game:GetService("UserInputService") end)
 Fatality.gui.IgnoreGuiInset = true
 Fatality.gradient = Instance.new("UIGradient")
-Fatality.gui.Parent = game:GetService("CoreGui")
+Fatality.gui.Parent = ChekerFatality("CoreGui", function() return game:GetService("CoreGui") end)
 Fatality.gui.ResetOnSpawn = false
-Fatality.LocalCamera = game.Workspace.CurrentCamera
-Fatality.Players = game:GetService("Players")
-Fatality.RunService = game:GetService("RunService")
-Fatality.TweenService = game:GetService("TweenService")
-Fatality.Lighting = game:GetService("Lighting")
-Fatality.Terrain = workspace:FindFirstChildOfClass("Terrain")
-Fatality.HttpService = game:GetService("HttpService")
-Fatality.TextChatService = game:GetService("TextChatService")
+Fatality.LocalCamera = ChekerFatality("CurrentCamera", function() return game.Workspace.CurrentCamera end)
+Fatality.Players = ChekerFatality("Players", function() return game:GetService("Players") end)
+Fatality.RunService = ChekerFatality("RunService", function() return game:GetService("RunService") end)
+Fatality.TweenService = ChekerFatality("TweenService", function() return game:GetService("TweenService") end)
+Fatality.Lighting = ChekerFatality("Lighting", function() return game:GetService("Lighting") end)
+Fatality.Terrain = ChekerFatality("Terrain", function() return game.Workspace:FindFirstChildOfClass("Terrain") end)
+Fatality.HttpService = ChekerFatality("HttpService", function() return game:GetService("HttpService") end)
+Fatality.TextChatService = ChekerFatality("TextChatService", function() return game:GetService("TextChatService") end)
 
 local Menuframe = Instance.new("Frame")
 Menuframe.Size = UDim2.new(0.0, 1056, 0.0, 767)
@@ -2668,8 +2680,10 @@ local VisualItemPanels = {
                 Pal = 1,
                 Items = {
                     { Type = "CheckBox", Text = "Chams", Var = "ChamsEnemy", colpicker = "VisibleChamsCol" },
-                    { Type = "CheckBox", Text = "Chams InVisible", Var = "ChamsEnemyInv", colpicker = "InvisibleChamsCol" },
-                    { Type = "ComboBox", Text = "Chams Materials", Var = "ChamsMaterials", Options = {"Flat", "Outline", "Glow", "Transparent", "Pulsating"} }
+                    { Type = "CheckBox", Text = "AlwaysOnTop", Var = "ChamsEnemyAlwaysOnTop" },
+                    { Type = "ComboBox", Text = "Chams Materials", Var = "ChamsMaterials", Options = {"Flat", "Outline", "Glow", "Transparent", "Pulsating"} },
+                    { Type = "CheckBox", Text = "Chams InVisible(NOT STABLE)", Var = "ChamsEnemyInv", colpicker = "InvisibleChamsCol" },
+                    { Type = "ComboBox", Text = "Chams Materials Inv", Var = "ChamsMaterialsInv", Options = {"Flat", "Outline", "Glow", "Transparent", "Pulsating"} }
                 }
             },
             {
@@ -4429,7 +4443,7 @@ local function applyChams(character)
     if Fatality.config.vars["ChamsEnemy"] then
         highlightOccluded = Instance.new("Highlight", character)
         highlightOccluded.Name = "cham_occluded"
-        highlightOccluded.DepthMode = Enum.HighlightDepthMode.Occluded
+        highlightOccluded.DepthMode = Fatality.config.vars["ChamsEnemyAlwaysOnTop"] and not Fatality.config.vars["ChamsEnemyInv"] and Enum.HighlightDepthMode.AlwaysOnTop or Enum.HighlightDepthMode.Occluded
         highlightOccluded.FillColor = Fatality.config.colors["VisibleChamsCol"]
         highlightOccluded.FillTransparency = 1 - Fatality.config.colors.alpha["VisibleChamsCol"]
         highlightOccluded.OutlineTransparency = 1
@@ -4491,71 +4505,61 @@ local function updateChams()
         if Fatality.config.vars["ChamsEnemy"] and data.highlightOccluded then
             data.highlightOccluded.Enabled = withinDistance
             data.highlightOccluded.FillColor = Fatality.config.colors["VisibleChamsCol"]
+            data.highlightOccluded.DepthMode = Fatality.config.vars["ChamsEnemyAlwaysOnTop"] and not Fatality.config.vars["ChamsEnemyInv"] and Enum.HighlightDepthMode.AlwaysOnTop or Enum.HighlightDepthMode.Occluded
         elseif data.highlightOccluded then
             data.highlightOccluded.Enabled = false
         end
 
         local material = Fatality.config.vars["ChamsMaterials"] or "Flat"
+        local materialInv = Fatality.config.vars["ChamsMaterialsInv"] or "Flat"
         local alphaInv = Fatality.config.colors.alpha["InvisibleChamsCol"]
         local alphaVis = Fatality.config.colors.alpha["VisibleChamsCol"]
-        if material == "Flat" then
-            if data.highlightAlways then
-                data.highlightAlways.FillTransparency = 1 - alphaInv
-                data.highlightAlways.OutlineTransparency = 1
-            end
-            if data.highlightOccluded then
-                data.highlightOccluded.FillTransparency = 1 - alphaVis
-                data.highlightOccluded.OutlineTransparency = 1
-            end
-        elseif material == "Outline" then
-            if data.highlightAlways then
-                data.highlightAlways.FillTransparency = 1
-                data.highlightAlways.OutlineTransparency = 1 - alphaInv
-                data.highlightAlways.OutlineColor = Fatality.config.colors["InvisibleChamsCol"]
-            end
-            if data.highlightOccluded then
-                data.highlightOccluded.FillTransparency = 1
-                data.highlightOccluded.OutlineTransparency = 1 - alphaVis
-                data.highlightOccluded.OutlineColor = Fatality.config.colors["VisibleChamsCol"]
-            end
-        elseif material == "Glow" then
-            if data.highlightAlways then
-                data.highlightAlways.FillTransparency = 1 - alphaInv
-                data.highlightAlways.OutlineTransparency = math.max(1 - alphaInv - 0.2, 0)
-                data.highlightAlways.OutlineColor = Fatality.config.colors["InvisibleChamsCol"]
-            end
-            if data.highlightOccluded then
-                data.highlightOccluded.FillTransparency = 1 - alphaVis
-                data.highlightOccluded.OutlineTransparency = math.max(1 - alphaVis - 0.2, 0)
-                data.highlightOccluded.OutlineColor = Fatality.config.colors["VisibleChamsCol"]
-            end
-            if Fatality.config.vars["ChamsEnemyInv"] and data.model then
+
+        if materialInv == "Flat" and data.highlightAlways then
+            data.highlightAlways.FillTransparency = 1 - alphaInv
+            data.highlightAlways.OutlineTransparency = 1
+        elseif materialInv == "Outline" and data.highlightAlways then
+            data.highlightAlways.FillTransparency = 1
+            data.highlightAlways.OutlineTransparency = 0
+            data.highlightAlways.OutlineColor = Fatality.config.colors["InvisibleChamsCol"]
+        elseif materialInv == "Glow" and data.highlightAlways then
+            data.highlightAlways.FillTransparency = 1 - alphaInv
+            data.highlightAlways.OutlineTransparency = math.max(1 - alphaInv - 0.2, 0)
+            data.highlightAlways.OutlineColor = Fatality.config.colors["InvisibleChamsCol"]
+            if data.model then
                 local light = data.model:FindFirstChild("GlowLight") or Instance.new("PointLight", data.model)
                 light.Name = "GlowLight"
                 light.Color = Fatality.config.colors["InvisibleChamsCol"]
                 light.Brightness = 1
                 light.Range = 25
             end
-        elseif material == "Transparent" then
-            if data.highlightAlways then
-                data.highlightAlways.FillTransparency = 1 - alphaInv
-                data.highlightAlways.OutlineTransparency = 1
-            end
-            if data.highlightOccluded then
-                data.highlightOccluded.FillTransparency = 1 - alphaVis
-                data.highlightOccluded.OutlineTransparency = 1
-            end
-        elseif material == "Pulsating" then
+        elseif materialInv == "Transparent" and data.highlightAlways then
+            data.highlightAlways.FillTransparency = 1 - alphaInv
+            data.highlightAlways.OutlineTransparency = 1
+        elseif materialInv == "Pulsating" and data.highlightAlways then
             local pulse = alphaInv * (0.5 + 0.5 * math.sin(tick() * 2))
+            data.highlightAlways.FillTransparency = 1 - pulse
+            data.highlightAlways.OutlineTransparency = 1
+        end
+
+        if material == "Flat" and data.highlightOccluded then
+            data.highlightOccluded.FillTransparency = 1 - alphaVis
+            data.highlightOccluded.OutlineTransparency = 1
+        elseif material == "Outline" and data.highlightOccluded then
+            data.highlightOccluded.FillTransparency = 1
+            data.highlightOccluded.OutlineTransparency = 0
+            data.highlightOccluded.OutlineColor = Fatality.config.colors["VisibleChamsCol"]
+        elseif material == "Glow" and data.highlightOccluded then
+            data.highlightOccluded.FillTransparency = 1 - alphaVis
+            data.highlightOccluded.OutlineTransparency = math.max(1 - alphaVis - 0.2, 0)
+            data.highlightOccluded.OutlineColor = Fatality.config.colors["VisibleChamsCol"]
+        elseif material == "Transparent" and data.highlightOccluded then
+            data.highlightOccluded.FillTransparency = 1 - alphaVis
+            data.highlightOccluded.OutlineTransparency = 1
+        elseif material == "Pulsating" and data.highlightOccluded then
             local pulseVis = alphaVis * (0.5 + 0.5 * math.sin(tick() * 2))
-            if data.highlightAlways then
-                data.highlightAlways.FillTransparency = 1 - pulse
-                data.highlightAlways.OutlineTransparency = 1
-            end
-            if data.highlightOccluded then
-                data.highlightOccluded.FillTransparency = 1 - pulseVis
-                data.highlightOccluded.OutlineTransparency = 1
-            end
+            data.highlightOccluded.FillTransparency = 1 - pulseVis
+            data.highlightOccluded.OutlineTransparency = 1
         end
     end
 end
@@ -4566,10 +4570,12 @@ local function toggleUpdate()
         if not connection then
             connection = Fatality.RunService.RenderStepped:Connect(updateChams)
         end
-        for _, player in ipairs(Fatality.Players:GetPlayers()) do
-            if player ~= Fatality.LocalPlayer and player.Character then
-                clearChams(player.Character)
-                applyChams(player.Character)
+        if game.Players then
+            for _, player in ipairs(game:GetService("Players"):GetPlayers()) do
+                if player ~= Fatality.LocalPlayer and player.Character then
+                    clearChams(player.Character)
+                    applyChams(player.Character)
+                end
             end
         end
     else
@@ -4592,43 +4598,49 @@ if chamsData[Fatality.LocalPlayer.Character] then
     clearChams(Fatality.LocalPlayer.Character)
 end
 
-for _, player in ipairs(Fatality.Players:GetPlayers()) do
-    if player ~= Fatality.LocalPlayer then
-        if player.Character and (Fatality.config.vars["ChamsEnemy"] or Fatality.config.vars["ChamsEnemyInv"]) then
-            task.wait(0.1)
-            applyChams(player.Character)
-        end
-        player.CharacterAdded:Connect(function(char)
-            task.wait(0.1)
-            if player ~= Fatality.LocalPlayer and (Fatality.config.vars["ChamsEnemy"] or Fatality.config.vars["ChamsEnemyInv"]) then
-                applyChams(char)
+if game.Players then
+    for _, player in ipairs(game:GetService("Players"):GetPlayers()) do
+        if player ~= Fatality.LocalPlayer then
+            if player.Character and (Fatality.config.vars["ChamsEnemy"] or Fatality.config.vars["ChamsEnemyInv"]) then
+                task.wait(0.1)
+                applyChams(player.Character)
             end
-        end)
+            player.CharacterAdded:Connect(function(char)
+                task.wait(0.1)
+                if player ~= Fatality.LocalPlayer and (Fatality.config.vars["ChamsEnemy"] or Fatality.config.vars["ChamsEnemyInv"]) then
+                    applyChams(char)
+                end
+            end)
+        end
     end
+
+    Fatality.Players.PlayerAdded:Connect(function(player)
+        if player ~= Fatality.LocalPlayer then
+            if player.Character and (Fatality.config.vars["ChamsEnemy"] or Fatality.config.vars["ChamsEnemyInv"]) then
+                task.wait(0.1)
+                applyChams(player.Character)
+            end
+            player.CharacterAdded:Connect(function(char)
+                task.wait(0.1)
+                if player ~= Fatality.LocalPlayer and (Fatality.config.vars["ChamsEnemy"] or Fatality.config.vars["ChamsEnemyInv"]) then
+                    applyChams(char)
+                end
+            end)
+        end
+    end)
 end
 
-Fatality.Players.PlayerAdded:Connect(function(player)
-    if player ~= Fatality.LocalPlayer then
-        if player.Character and (Fatality.config.vars["ChamsEnemy"] or Fatality.config.vars["ChamsEnemyInv"]) then
-            task.wait(0.1)
-            applyChams(player.Character)
-        end
-        player.CharacterAdded:Connect(function(char)
-            task.wait(0.1)
-            if player ~= Fatality.LocalPlayer and (Fatality.config.vars["ChamsEnemy"] or Fatality.config.vars["ChamsEnemyInv"]) then
-                applyChams(char)
-            end
-        end)
-    end
-end)
-
-local lastChamsState = { ChamsEnemy = false, ChamsEnemyInv = false }
+local lastChamsState = { ChamsEnemy = false, ChamsEnemyInv = false, ChamsEnemyAlwaysOnTop = false }
 Fatality.RunService.Heartbeat:Connect(function()
     local currentChamsEnemy = Fatality.config.vars["ChamsEnemy"] or false
     local currentChamsEnemyInv = Fatality.config.vars["ChamsEnemyInv"] or false
-    if currentChamsEnemy ~= lastChamsState.ChamsEnemy or currentChamsEnemyInv ~= lastChamsState.ChamsEnemyInv then
+    local currentChamsEnemyAlwaysOnTop = Fatality.config.vars["ChamsEnemyAlwaysOnTop"] or false
+    if currentChamsEnemy ~= lastChamsState.ChamsEnemy or 
+       currentChamsEnemyInv ~= lastChamsState.ChamsEnemyInv or 
+       currentChamsEnemyAlwaysOnTop ~= lastChamsState.ChamsEnemyAlwaysOnTop then
         lastChamsState.ChamsEnemy = currentChamsEnemy
         lastChamsState.ChamsEnemyInv = currentChamsEnemyInv
+        lastChamsState.ChamsEnemyAlwaysOnTop = currentChamsEnemyAlwaysOnTop
         toggleUpdate()
     end
 end)
@@ -5021,6 +5033,3 @@ Fatality.RunService.Heartbeat:Connect(function()
         updateFullBright()
     end
 end)
-
-
-
