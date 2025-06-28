@@ -1683,17 +1683,18 @@ function Fatality.ui.ConfigManager(parent)
                 end
             end
 
-            if configCopy.colors and configCopy.alpha then
+            if configCopy.colors then
                 local colorCopy = {}
                 for key, color in pairs(configCopy.colors) do
                     if typeof(color) == "Color3" then
-                        colorCopy[key] = encodeColor(color, configCopy.alpha[key] or 1)
+                        local alpha = configCopy.colors.alpha and configCopy.colors.alpha[key] or 1
+                        colorCopy[key] = encodeColor(color, alpha)
                     else
                         colorCopy[key] = color
                     end
                 end
                 configCopy.colors = colorCopy
-                configCopy.alpha = nil -- Remove alpha from config as they are now encoded with colors
+                configCopy.colors.alpha = configCopy.colors.alpha or {}
             end
 
             if configCopy.binds then
@@ -1795,7 +1796,7 @@ function Fatality.ui.ConfigManager(parent)
 
                 if loadedConfig.colors then
                     local colorTable = {}
-                    local alphaTable = {}
+                    local alphaTable = loadedConfig.colors.alpha or {}
                     for key, color in pairs(loadedConfig.colors) do
                         if type(color) == "table" and color.r and color.g and color.b then
                             local decodedColor, decodedAlpha = decodeColor(color)
@@ -1806,7 +1807,7 @@ function Fatality.ui.ConfigManager(parent)
                         end
                     end
                     loadedConfig.colors = colorTable
-                    loadedConfig.alpha = alphaTable
+                    loadedConfig.colors.alpha = alphaTable
                 end
 
                 if loadedConfig.binds then
@@ -3107,7 +3108,7 @@ local aimbotItemPanels = {
                     { Type = "ComboBox", Text = "Target priority", Var = "TargetPriority", Options = {"Distance", "FOV"} },
                     { Type = "ComboBox", Text = "Ignores", Var = "IgnoresAimbot", Options = {"Walls", "Teammates", "God time", "Frends Roblox"}, moresave = true },
                     { Type = "ComboBox", Text = "Blox Strike", Var = "BloxStrikeAimbot", Options = {"NoRecoil", "MoreAmmo", "DoubleTap"}, moresave = true },
-                    { Type = "ComboBox", Text = "Hit Sound", Var = "HitSound", Options = {"None", "Metalic", "Fatality", "Exp", "Bell"} },
+                    { Type = "ComboBox", Text = "Hit Sound", Var = "HitSound", Options = {"None", "Metalic", "Fatality", "Exp", "Rust"} },
                     --[[
                     { Type = "CheckBox", Text = "No Recoil(Blox)", Var = "NoRecoil" },
                     { Type = "CheckBox", Text = "More Ammo(Blox)", Var = "MoreAmmo" },
@@ -3853,8 +3854,8 @@ local function playHitSound()
         sound.SoundId = "rbxassetid://105200859553597"
     elseif Fatality.config.vars["HitSound"] == "Exp" then
         sound.SoundId = "rbxassetid://72524101281710"
-    elseif Fatality.config.vars["HitSound"] == "Bell" then
-        sound.SoundId = "rbxassetid://137340472939726"
+    elseif Fatality.config.vars["HitSound"] == "Rust" then
+        sound.SoundId = "rbxassetid://4764109000"
     end
     sound:Play()
     sound.Ended:Connect(function()
