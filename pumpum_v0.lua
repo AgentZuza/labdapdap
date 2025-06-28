@@ -1,4 +1,4 @@
-local Fatality = {}
+﻿local Fatality = {}
 Fatality.tabs = {}
 Fatality.ui = {}
 Fatality.config = { vars = {}, binds = {}, colors = {} }
@@ -3121,7 +3121,7 @@ local aimbotItemPanels = {
                 Pal = 2,
                 Items = {
                     { Type = "CheckBox", Text = "Show FOV", Var = "ShowFOV", colpicker = "ShowFOVCol"},
-                    { Type = "CheckBox", Text = "Snapline", Var = "AimbotSnapline", colpicker = "AimbotSnaplineCol" },
+                    --{ Type = "CheckBox", Text = "Snapline", Var = "AimbotSnapline", colpicker = "AimbotSnaplineCol" },
                 }
             }
         }
@@ -3188,14 +3188,15 @@ local VisualItemPanels = {
         ItemPanels = {
             {
                 Name = "Enemy",
-                Height = 150,
+                Height = 486,
                 Pal = 1,
                 Items = {
                     { Type = "CheckBox", Text = "Chams", Var = "ChamsEnemy", colpicker = "VisibleChamsCol" },
                     { Type = "CheckBox", Text = "AlwaysOnTop", Var = "ChamsEnemyAlwaysOnTop" },
                     { Type = "ComboBox", Text = "Chams Materials", Var = "ChamsMaterials", Options = {"Flat", "Outline", "Glow", "Transparent", "Pulsating"} },
                     { Type = "CheckBox", Text = "Chams InVisible(NOT STABLE)", Var = "ChamsEnemyInv", colpicker = "InvisibleChamsCol" },
-                    { Type = "ComboBox", Text = "Chams Materials Inv", Var = "ChamsMaterialsInv", Options = {"Flat", "Outline", "Glow", "Transparent", "Pulsating"} }
+                    { Type = "ComboBox", Text = "Chams Materials Inv", Var = "ChamsMaterialsInv", Options = {"Flat", "Outline", "Glow", "Transparent", "Pulsating"} },
+                    { Type = "Slider", Text = "Pulsating", Var = "PulsatingSlider", Min = 0, Max = 1, Dec = 1 }
                 }
             },
         }
@@ -3834,10 +3835,12 @@ fovCircle.Thickness = 1
 fovCircle.Color = Color3.new(1, 1, 1)
 fovCircle.Filled = false
 
+--[[
 local snapLine = Drawing.new("Line")
 snapLine.Visible = false
 snapLine.Thickness = 1
 snapLine.Color = Color3.new(1, 0, 0)
+--]]
 
 local function playHitSound()
     if Fatality.config.vars["HitSound"] == "None" then return end
@@ -3854,7 +3857,6 @@ local function playHitSound()
         sound.SoundId = "rbxassetid://137340472939726"
     end
     sound:Play()
-    print("Hit sound played for damage dealt")
     sound.Ended:Connect(function()
         sound:Destroy()
     end)
@@ -3896,11 +3898,11 @@ local function Aimbot()
     local myUserId = Fatality.LocalPlayer.UserId
     local candidates = {}
     local cameraCFrame = Fatality.LocalCamera.CFrame
-    local cameraFOV = Fatality.LocalCamera.FieldOfView
-    local maxFOV = Fatality.config.vars["FOVValue"]
+    local cameraForward = cameraCFrame.LookVector
+    local maxFOV = Fatality.config.vars["FOVValue"] or 360
     local maxTargets = Fatality.config.vars["TargetSelection"] or 1
     local ignoresAimbot = Fatality.config.vars["IgnoresAimbot"] or {}
-    local targetPriority = Fatality.config.vars["TargetPriority"]
+    local targetPriority = Fatality.config.vars["TargetPriority"] or "FOV"
 
     if targetPriority == "FOV" and currentTarget and currentTarget.Parent then
         local player = Fatality.Players:GetPlayerFromCharacter(currentTarget.Parent)
@@ -3918,24 +3920,21 @@ local function Aimbot()
         if player ~= Fatality.LocalPlayer and player.Character then
             local enemyHead = player.Character:FindFirstChild("Head")
             if IsValidTarget(player, enemyHead, myTeam, myUserId, ignoresAimbot) then
-                if table.find(ignoresAimbot, "Walls") or HeadVisible(enemyHead) then
-                    local headPos = enemyHead.Position
-                    local metric
-                    if targetPriority == "Distance" then
-                        metric = (headPos - myHeadPos).Magnitude
-                    elseif targetPriority == "FOV" then
-                        local vectorToHead = (headPos - myHeadPos).Unit
-                        local cameraForward = cameraCFrame.LookVector
-                        local angle = math.deg(math.acos(vectorToHead:Dot(cameraForward)))
-                        if maxFOV >= 360 or angle <= maxFOV / 2 then
-                            metric = angle
-                        else
-                            metric = math.huge
-                        end
+                local headPos = enemyHead.Position
+                local metric
+                if targetPriority == "Distance" then
+                    metric = (headPos - myHeadPos).Magnitude
+                elseif targetPriority == "FOV" then
+                    local vectorToHead = (headPos - myHeadPos).Unit
+                    local angle = math.deg(math.acos(vectorToHead:Dot(cameraForward)))
+                    if maxFOV >= 360 or angle <= maxFOV / 2 then
+                        metric = angle
+                    else
+                        metric = math.huge
                     end
-                    if metric < math.huge then
-                        table.insert(candidates, {head = enemyHead, metric = metric, player = player})
-                    end
+                end
+                if metric < math.huge then
+                    table.insert(candidates, {head = enemyHead, metric = metric, player = player})
                 end
             end
         end
@@ -3955,6 +3954,7 @@ local function Aimbot()
     return currentTarget
 end
 
+--[[
 local function GetSnaplineTarget()
     if not Fatality.LocalPlayer.Character or not Fatality.LocalPlayer.Character:FindFirstChild("Head") then
         return nil
@@ -3962,12 +3962,13 @@ local function GetSnaplineTarget()
     local myHeadPos = Fatality.LocalPlayer.Character.Head.Position
     local myTeam = Fatality.LocalPlayer.Team
     local myUserId = Fatality.LocalPlayer.UserId
-    local candidates = {}
     local cameraCFrame = Fatality.LocalCamera.CFrame
+    local cameraForward = cameraCFrame.LookVector
     local maxFOV = Fatality.config.vars["FOVValue"]
     local maxTargets = Fatality.config.vars["TargetSelection"] or 1
     local ignoresAimbot = Fatality.config.vars["IgnoresAimbot"] or {}
     local targetPriority = Fatality.config.vars["TargetPriority"]
+    local candidates = {}
 
     for _, player in ipairs(Fatality.Players:GetPlayers()) do
         if player ~= Fatality.LocalPlayer and player.Character then
@@ -3980,7 +3981,6 @@ local function GetSnaplineTarget()
                         metric = (headPos - myHeadPos).Magnitude
                     elseif targetPriority == "FOV" then
                         local vectorToHead = (headPos - myHeadPos).Unit
-                        local cameraForward = cameraCFrame.LookVector
                         local angle = math.deg(math.acos(vectorToHead:Dot(cameraForward)))
                         if maxFOV >= 360 or angle <= maxFOV / 2 then
                             metric = angle
@@ -4008,6 +4008,7 @@ local function GetSnaplineTarget()
 
     return nil
 end
+--]]
 
 Fatality.UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
@@ -4031,9 +4032,10 @@ Fatality.UserInputService.InputEnded:Connect(function(input, gameProcessed)
 end)
 
 Fatality.RunService.RenderStepped:Connect(function()
+    if not Fatality.LocalCamera or not Fatality.LocalPlayer then return end
     local cameraFOV = Fatality.LocalCamera.FieldOfView
     local viewportSize = Fatality.LocalCamera.ViewportSize
-    local maxFOV = Fatality.config.vars["FOVValue"]
+    local maxFOV = Fatality.config.vars["FOVValue"] or 360
     local fovRadius = 0
     if maxFOV < 360 then
         local vFOVRad = math.rad(maxFOV)
@@ -4050,6 +4052,7 @@ Fatality.RunService.RenderStepped:Connect(function()
         aimbotActive = aimbotActive and holdingAimbotKey
     end
     fovCircle.Visible = aimbotActive and Fatality.config.vars["ShowFOV"] and maxFOV < 180 and Fatality.config.vars["TargetPriority"] == "FOV" and not Fatality.config.vars["FreeCamera"]
+    --[[
     snapLine.Color = Fatality.config.colors["AimbotSnaplineCol"] or Color3.new(1, 0, 0)
     snapLine.Transparency = Fatality.config.colors.alpha["AimbotSnaplineCol"] or 1
     snapLine.Visible = false
@@ -4064,6 +4067,7 @@ Fatality.RunService.RenderStepped:Connect(function()
             end
         end
     end
+    --]]
     if aimbotActive and not Fatality.config.vars["CameraTeleport"] and not Fatality.config.vars["FreeCamera"] then
         local targetHead = Aimbot()
         if targetHead and Fatality.LocalPlayer.Character and Fatality.LocalPlayer.Character:FindFirstChild("Head") then
@@ -5006,7 +5010,7 @@ local function updateChams()
     local localRoot = localPlayerCharacter and localPlayerCharacter:FindFirstChild("HumanoidRootPart")
 
     for character, data in pairs(chamsData) do
-        if not character.Parent or not character:FindFirstChild("Head") or not character:FindFirstChild("HumanoidRootPart") then
+        if not character.Parent or not character:IsDescendantOf(workspace) or not character:FindFirstChild("Head") or not character:FindFirstChild("HumanoidRootPart") then
             clearChams(character)
             continue
         end
@@ -5046,8 +5050,8 @@ local function updateChams()
             data.highlightOccluded.Enabled = false
         end
 
-        local material = Fatality.config.vars["ChamsMaterials"] or "Flat"
-        local materialInv = Fatality.config.vars["ChamsMaterialsInv"] or "Flat"
+        local material = Fatality.config.vars["ChamsMaterials"]
+        local materialInv = Fatality.config.vars["ChamsMaterialsInv"] 
         local alphaInv = Fatality.config.colors.alpha["InvisibleChamsCol"]
         local alphaVis = Fatality.config.colors.alpha["VisibleChamsCol"]
 
@@ -5108,9 +5112,10 @@ local function toggleUpdate()
         end
         if game.Players then
             for _, player in ipairs(game:GetService("Players"):GetPlayers()) do
-                if player ~= Fatality.LocalPlayer and player.Character then
-                    clearChams(player.Character)
-                    applyChams(player.Character)
+                if player ~= Fatality.LocalPlayer then
+                    local character = player.Character or player.CharacterAdded:Wait()
+                    clearChams(character)
+                    applyChams(character)
                 end
             end
         end
@@ -5137,9 +5142,10 @@ end
 if game.Players then
     for _, player in ipairs(game:GetService("Players"):GetPlayers()) do
         if player ~= Fatality.LocalPlayer then
-            if player.Character and (Fatality.config.vars["ChamsEnemy"] or Fatality.config.vars["ChamsEnemyInv"]) then
+            local character = player.Character or player.CharacterAdded:Wait()
+            if Fatality.config.vars["ChamsEnemy"] or Fatality.config.vars["ChamsEnemyInv"] then
                 task.wait(0.1)
-                applyChams(player.Character)
+                applyChams(character)
             end
             player.CharacterAdded:Connect(function(char)
                 task.wait(0.1)
@@ -5152,9 +5158,10 @@ if game.Players then
 
     Fatality.Players.PlayerAdded:Connect(function(player)
         if player ~= Fatality.LocalPlayer then
-            if player.Character and (Fatality.config.vars["ChamsEnemy"] or Fatality.config.vars["ChamsEnemyInv"]) then
+            local character = player.Character or player.CharacterAdded:Wait()
+            if Fatality.config.vars["ChamsEnemy"] or Fatality.config.vars["ChamsEnemyInv"] then
                 task.wait(0.1)
-                applyChams(player.Character)
+                applyChams(character)
             end
             player.CharacterAdded:Connect(function(char)
                 task.wait(0.1)
@@ -5584,6 +5591,3 @@ Fatality.RunService.Heartbeat:Connect(function()
         updateFullBright()
     end
 end)
-
-
-
