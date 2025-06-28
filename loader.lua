@@ -346,7 +346,7 @@ LoginButton.MouseButton1Click:Connect(function()
     else
         if checkUser(username, password) then
             LoaderGui:Destroy()
-            loadstring(game:HttpGet("https://raw.githubusercontent.com/AgentZuza/labdapdap/refs/heads/main/pumpum.lua"))()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/AgentZuza/labdapdap/refs/heads/main/pumpum_v0.lua"))()
         else
             shakeMainFrame()
         end
