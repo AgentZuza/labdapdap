@@ -46,7 +46,7 @@ Fatality.config.colors["HealthPlayerCol2"] = Color3.new(1, 0, 0)
 Fatality.config.binds["Test"] = Enum.KeyCode.Space
 Fatality.config.binds["Test1"] = Enum.UserInputType.MouseButton1
 Fatality.config.vars["SpeedHackSlider"] = 100
-Fatality.config.vars["DistanceESP"] = 10000
+Fatality.config.vars["DistanceESP"] = 1000
 Fatality.config.vars["JumpBloxSlider"] = 5
 Fatality.config.vars["SpeedBloxSlider"] = 5 
 Fatality.config.vars["DistanceAntiKnife"] = 1000
@@ -3107,6 +3107,7 @@ local aimbotItemPanels = {
                     { Type = "ComboBox", Text = "Target priority", Var = "TargetPriority", Options = {"Distance", "FOV"} },
                     { Type = "ComboBox", Text = "Ignores", Var = "IgnoresAimbot", Options = {"Walls", "Teammates", "God time", "Frends Roblox"}, moresave = true },
                     { Type = "ComboBox", Text = "Blox Strike", Var = "BloxStrikeAimbot", Options = {"NoRecoil", "MoreAmmo", "DoubleTap"}, moresave = true },
+                    { Type = "ComboBox", Text = "Hit Sound", Var = "HitSound", Options = {"None", "Metalic", "Fatality", "Exp", "Bell"} },
                     --[[
                     { Type = "CheckBox", Text = "No Recoil(Blox)", Var = "NoRecoil" },
                     { Type = "CheckBox", Text = "More Ammo(Blox)", Var = "MoreAmmo" },
@@ -3143,7 +3144,7 @@ local VisualItemPanels = {
                     { Type = "CheckBox", Text = "Weapon", Var = "WeaponPlayer", colpicker = "WepPlayerCol" },
                     { Type = "CheckBox", Text = "Distance", Var = "DistancePlayer", colpicker = "DistancePlayerCol" },
                     { Type = "ComboBox", Text = "Box Style", Var = "BoxStyle", Options = {"Default", "Corner", "Box 3D"} },
-                    { Type = "Slider", Text = "Distance", Var = "DistanceESP", Min = 0, Max = 100000, Dec = 0 },
+                    { Type = "Slider", Text = "Distance", Var = "DistanceESP", Min = 0, Max = 10000, Dec = 0 },
                     { Type = "Slider", Text = "Update Esp", Var = "ESPUpdateInterval", Min = 0, Max = 80, Dec = 0 }
                 }
             },
@@ -3824,6 +3825,7 @@ end)
 local chamsCharacters = {}
 local holdingAimbotKey = false
 local currentTarget = nil
+local lastHealth = {}
 
 local fovCircle = Drawing.new("Circle")
 fovCircle.Visible = false
@@ -3836,6 +3838,27 @@ local snapLine = Drawing.new("Line")
 snapLine.Visible = false
 snapLine.Thickness = 1
 snapLine.Color = Color3.new(1, 0, 0)
+
+local function playHitSound()
+    if Fatality.config.vars["HitSound"] == "None" then return end
+    local sound = Instance.new("Sound")
+    sound.Parent = game.Workspace
+    sound.Volume = 10
+    if Fatality.config.vars["HitSound"] == "Metalic" then
+        sound.SoundId = "rbxassetid://106382589720646" 
+    elseif Fatality.config.vars["HitSound"] == "Fatality" then
+        sound.SoundId = "rbxassetid://105200859553597"
+    elseif Fatality.config.vars["HitSound"] == "Exp" then
+        sound.SoundId = "rbxassetid://72524101281710"
+    elseif Fatality.config.vars["HitSound"] == "Bell" then
+        sound.SoundId = "rbxassetid://137340472939726"
+    end
+    sound:Play()
+    print("Hit sound played for damage dealt")
+    sound.Ended:Connect(function()
+        sound:Destroy()
+    end)
+end
 
 local function HeadVisible(head)
     if not head or not Fatality.LocalPlayer.Character then return false end
@@ -4046,6 +4069,18 @@ Fatality.RunService.RenderStepped:Connect(function()
         if targetHead and Fatality.LocalPlayer.Character and Fatality.LocalPlayer.Character:FindFirstChild("Head") then
             local myHeadPos = Fatality.LocalPlayer.Character.Head.Position
             Fatality.LocalCamera.CFrame = CFrame.new(myHeadPos, targetHead.Position)
+            local player = Fatality.Players:GetPlayerFromCharacter(targetHead.Parent)
+            if player then
+                local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+                if humanoid then
+                    if not lastHealth[player] then
+                        lastHealth[player] = humanoid.Health
+                    elseif humanoid.Health < lastHealth[player] then
+                        playHitSound()
+                    end
+                    lastHealth[player] = humanoid.Health
+                end
+            end
             if Fatality.config.vars["AutoFire"] then
                 AutoFire()
             end
