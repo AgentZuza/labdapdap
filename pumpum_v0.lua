@@ -3194,10 +3194,9 @@ local VisualItemPanels = {
                 Items = {
                     { Type = "CheckBox", Text = "Chams", Var = "ChamsEnemy", colpicker = "VisibleChamsCol" },
                     { Type = "CheckBox", Text = "AlwaysOnTop", Var = "ChamsEnemyAlwaysOnTop" },
-                    { Type = "ComboBox", Text = "Chams Materials", Var = "ChamsMaterials", Options = {"Flat", "Outline", "Glow", "Transparent", "Pulsating"} },
+                    { Type = "ComboBox", Text = "Chams Materials", Var = "ChamsMaterials", Options = {"Flat", "Outline", "Glow", "Pulsating"} },
                     { Type = "CheckBox", Text = "Chams InVisible(NOT STABLE)", Var = "ChamsEnemyInv", colpicker = "InvisibleChamsCol" },
-                    { Type = "ComboBox", Text = "Chams Materials Inv", Var = "ChamsMaterialsInv", Options = {"Flat", "Outline", "Glow", "Transparent", "Pulsating"} },
-                    { Type = "Slider", Text = "Pulsating", Var = "PulsatingSlider", Min = 0, Max = 1, Dec = 1 }
+                    { Type = "ComboBox", Text = "Chams Materials Inv", Var = "ChamsMaterialsInv", Options = {"Flat", "Outline", "Glow", "Pulsating"} }
                 }
             },
         }
@@ -4032,79 +4031,6 @@ Fatality.UserInputService.InputEnded:Connect(function(input, gameProcessed)
     end
 end)
 
-local lastCameraCFrame = nil
-
-Fatality.RunService.RenderStepped:Connect(function(deltaTime)
-    if not Fatality.LocalCamera or not Fatality.LocalPlayer then return end
-    local cameraFOV = Fatality.LocalCamera.FieldOfView
-    local viewportSize = Fatality.LocalCamera.ViewportSize
-    local maxFOV = Fatality.config.vars["FOVValue"] or 360
-    local fovRadius = 0
-    if maxFOV < 360 then
-        local vFOVRad = math.rad(maxFOV)
-        fovRadius = (viewportSize.Y / 2) * math.tan(vFOVRad / 2) / math.tan(math.rad(cameraFOV) / 2)
-    else
-        fovRadius = math.max(viewportSize.X, viewportSize.Y) * 0.7
-    end
-    fovCircle.Position = Vector2.new(viewportSize.X / 2, viewportSize.Y / 2)
-    fovCircle.Radius = fovRadius
-    fovCircle.Color = Fatality.config.colors["ShowFOVCol"] or Color3.new(1, 1, 1)
-    fovCircle.Transparency = Fatality.config.colors.alpha["ShowFOVCol"] or 1
-    local aimbotActive = Fatality.config.vars["enableAimbot"]
-    if Fatality.config.binds["enableAimbotBind"] then
-        aimbotActive = aimbotActive and holdingAimbotKey
-    end
-    fovCircle.Visible = aimbotActive and Fatality.config.vars["ShowFOV"] and maxFOV < 180 and Fatality.config.vars["TargetPriority"] == "FOV" and not Fatality.config.vars["FreeCamera"]
-    --[[
-    snapLine.Color = Fatality.config.colors["AimbotSnaplineCol"] or Color3.new(1, 0, 0)
-    snapLine.Transparency = Fatality.config.colors.alpha["AimbotSnaplineCol"] or 1
-    snapLine.Visible = false
-    if Fatality.config.vars["AimbotSnapline"] and Fatality.LocalPlayer.Character and Fatality.LocalPlayer.Character:FindFirstChild("Head") then
-        local snapTarget = GetSnaplineTarget()
-        if snapTarget then
-            local targetPos = Fatality.LocalCamera:WorldToViewportPoint(snapTarget.Position)
-            if targetPos.Z > 0 then
-                snapLine.From = Vector2.new(viewportSize.X / 2, viewportSize.Y / 2)
-                snapLine.To = Vector2.new(targetPos.X, targetPos.Y)
-                snapLine.Visible = true
-            end
-        end
-    end
-    --]]
-    if aimbotActive and not Fatality.config.vars["CameraTeleport"] and not Fatality.config.vars["FreeCamera"] then
-        local targetHead = Aimbot()
-        if targetHead and Fatality.LocalPlayer.Character and Fatality.LocalPlayer.Character:FindFirstChild("Head") then
-            local myHeadPos = Fatality.LocalPlayer.Character.Head.Position
-            local targetCFrame = CFrame.new(myHeadPos, targetHead.Position)
-            if lastCameraCFrame then
-                Fatality.LocalCamera.CFrame = lastCameraCFrame:Lerp(targetCFrame, 0.35 * (deltaTime * 60)) 
-            else
-                Fatality.LocalCamera.CFrame = targetCFrame
-            end
-            lastCameraCFrame = Fatality.LocalCamera.CFrame
-            local player = Fatality.Players:GetPlayerFromCharacter(targetHead.Parent)
-            if player then
-                local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
-                if humanoid then
-                    if not lastHealth[player] then
-                        lastHealth[player] = humanoid.Health
-                    elseif humanoid.Health < lastHealth[player] then
-                        playHitSound()
-                    end
-                    lastHealth[player] = humanoid.Health
-                end
-            end
-            if Fatality.config.vars["AutoFire"] then
-                AutoFire()
-            end
-        else
-            lastCameraCFrame = nil
-        end
-    else
-        lastCameraCFrame = nil
-    end
-end)
-
 
 
 local originalValues = {}
@@ -4590,9 +4516,80 @@ local function CreateESPBox(player)
     ESP_Boxes[player] = {box = box,screenGui = screenGui,nameLabel = nameLabel,healthLabel = healthLabel,teamLabel = teamLabel,weaponLabel = weaponLabel,distanceLabel = distanceLabel,healthSlider = healthSlider,healthSliderBG = healthSliderBG,lastName = "",lastTeam = "",lastWeapon = "",lastDistance = "",lastHealth = ""}
 end
 
+local lastCameraCFrame = nil
+
 local function UpdateESP()
     local lastUpdate = tick()
-    RunService.RenderStepped:Connect(function()
+    RunService.RenderStepped:Connect(function(deltaTime)
+        if not Fatality.LocalCamera or not Fatality.LocalPlayer then return end
+        local cameraFOV = Fatality.LocalCamera.FieldOfView
+        local viewportSize = Fatality.LocalCamera.ViewportSize
+        local maxFOV = Fatality.config.vars["FOVValue"] or 360
+        local fovRadius = 0
+        if maxFOV < 360 then
+            local vFOVRad = math.rad(maxFOV)
+            fovRadius = (viewportSize.Y / 2) * math.tan(vFOVRad / 2) / math.tan(math.rad(cameraFOV) / 2)
+        else
+            fovRadius = math.max(viewportSize.X, viewportSize.Y) * 0.7
+        end
+        fovCircle.Position = Vector2.new(viewportSize.X / 2, viewportSize.Y / 2)
+        fovCircle.Radius = fovRadius
+        fovCircle.Color = Fatality.config.colors["ShowFOVCol"] or Color3.new(1, 1, 1)
+        fovCircle.Transparency = Fatality.config.colors.alpha["ShowFOVCol"] or 1
+        local aimbotActive = Fatality.config.vars["enableAimbot"]
+        if Fatality.config.binds["enableAimbotBind"] then
+            aimbotActive = aimbotActive and holdingAimbotKey
+        end
+        fovCircle.Visible = aimbotActive and Fatality.config.vars["ShowFOV"] and maxFOV < 180 and Fatality.config.vars["TargetPriority"] == "FOV" and not Fatality.config.vars["FreeCamera"]
+        --[[
+        snapLine.Color = Fatality.config.colors["AimbotSnaplineCol"] or Color3.new(1, 0, 0)
+        snapLine.Transparency = Fatality.config.colors.alpha["AimbotSnaplineCol"] or 1
+        snapLine.Visible = false
+        if Fatality.config.vars["AimbotSnapline"] and Fatality.LocalPlayer.Character and Fatality.LocalPlayer.Character:FindFirstChild("Head") then
+            local snapTarget = GetSnaplineTarget()
+            if snapTarget then
+                local targetPos = Fatality.LocalCamera:WorldToViewportPoint(snapTarget.Position)
+                if targetPos.Z > 0 then
+                    snapLine.From = Vector2.new(viewportSize.X / 2, viewportSize.Y / 2)
+                    snapLine.To = Vector2.new(targetPos.X, targetPos.Y)
+                    snapLine.Visible = true
+                end
+            end
+        end
+        --]]
+        if aimbotActive and not Fatality.config.vars["CameraTeleport"] and not Fatality.config.vars["FreeCamera"] then
+            local targetHead = Aimbot()
+            if targetHead and Fatality.LocalPlayer.Character and Fatality.LocalPlayer.Character:FindFirstChild("Head") then
+                local myHeadPos = Fatality.LocalPlayer.Character.Head.Position
+                local targetCFrame = CFrame.new(myHeadPos, targetHead.Position)
+                if lastCameraCFrame then
+                    Fatality.LocalCamera.CFrame = lastCameraCFrame:Lerp(targetCFrame, 0.35 * (deltaTime * 60)) 
+                else
+                    Fatality.LocalCamera.CFrame = targetCFrame
+                end
+                lastCameraCFrame = Fatality.LocalCamera.CFrame
+                local player = Fatality.Players:GetPlayerFromCharacter(targetHead.Parent)
+                if player then
+                    local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+                    if humanoid then
+                        if not lastHealth[player] then
+                            lastHealth[player] = humanoid.Health
+                        elseif humanoid.Health < lastHealth[player] then
+                            playHitSound()
+                        end
+                        lastHealth[player] = humanoid.Health
+                    end
+                end
+                if Fatality.config.vars["AutoFire"] then
+                    AutoFire()
+                end
+            else
+                lastCameraCFrame = nil
+            end
+        else
+            lastCameraCFrame = nil
+        end
+
         local updateInterval = Fatality.config.vars["ESPUpdateInterval"] / 1000
         if not (Fatality.config.vars["EspBox"] or Fatality.config.vars["Name"] or Fatality.config.vars["HealthPlayer"] or Fatality.config.vars["WeaponPlayer"] or Fatality.config.vars["TeamPlayer"] or Fatality.config.vars["DistancePlayer"]) then
             for _, elements in pairs(ESP_Boxes) do
@@ -5086,12 +5083,11 @@ local function updateChams()
                 light.Brightness = 1
                 light.Range = 25
             end
-        elseif materialInv == "Transparent" and data.highlightAlways then
-            data.highlightAlways.FillTransparency = 1 - alphaInv
-            data.highlightAlways.OutlineTransparency = 1
         elseif materialInv == "Pulsating" and data.highlightAlways then
-            local pulse = alphaInv * (0.5 + 0.5 * math.sin(tick() * 2))
-            data.highlightAlways.FillTransparency = 1 - pulse
+            local maxTransparency = alphaInv
+            local pulse = 0.5 + 0.5 * math.sin(tick() * 2) 
+            local interpolatedTransparency = 0.1 + (maxTransparency - 0.1) * pulse
+            data.highlightAlways.FillTransparency = 1 - interpolatedTransparency
             data.highlightAlways.OutlineTransparency = 1
         end
 
@@ -5106,12 +5102,11 @@ local function updateChams()
             data.highlightOccluded.FillTransparency = 1 - alphaVis
             data.highlightOccluded.OutlineTransparency = math.max(1 - alphaVis - 0.2, 0)
             data.highlightOccluded.OutlineColor = Fatality.config.colors["VisibleChamsCol"]
-        elseif material == "Transparent" and data.highlightOccluded then
-            data.highlightOccluded.FillTransparency = 1 - alphaVis
-            data.highlightOccluded.OutlineTransparency = 1
         elseif material == "Pulsating" and data.highlightOccluded then
-            local pulseVis = alphaVis * (0.5 + 0.5 * math.sin(tick() * 2))
-            data.highlightOccluded.FillTransparency = 1 - pulseVis
+            local maxTransparency = alphaVis
+            local pulse = 0.5 + 0.5 * math.sin(tick() * 2)
+            local interpolatedTransparency = 0.1 + (maxTransparency - 0.1) * pulse
+            data.highlightOccluded.FillTransparency = 1 - interpolatedTransparency
             data.highlightOccluded.OutlineTransparency = 1
         end
     end
@@ -5123,12 +5118,13 @@ local function toggleUpdate()
         if not connection then
             connection = Fatality.RunService.RenderStepped:Connect(updateChams)
         end
-        if game.Players then
-            for _, player in ipairs(game:GetService("Players"):GetPlayers()) do
-                if player ~= Fatality.LocalPlayer then
-                    local character = player.Character or player.CharacterAdded:Wait()
-                    clearChams(character)
-                    applyChams(character)
+        for _, player in ipairs(game:GetService("Players"):GetPlayers()) do
+            if player ~= Fatality.LocalPlayer and player.Character then
+                local humanoid = player.Character:FindFirstChild("Humanoid")
+                local humanoidRootPart = player.Character:FindFirstChild("HumanoidRootPart")
+                if humanoid and humanoidRootPart then
+                    clearChams(player.Character)
+                    applyChams(player.Character)
                 end
             end
         end
@@ -5137,54 +5133,60 @@ local function toggleUpdate()
             connection:Disconnect()
             connection = nil
         end
-        for character, data in pairs(chamsData) do
-            if data.highlightAlways then data.highlightAlways.Enabled = false end
-            if data.highlightOccluded then data.highlightOccluded.Enabled = false end
-            for _, clone in pairs(data.clonedParts or {}) do
-                clone.Transparency = 1
-            end
+        for character, _ in pairs(chamsData) do
             clearChams(character)
         end
     end
 end
 
-if chamsData[Fatality.LocalPlayer.Character] then
-    clearChams(Fatality.LocalPlayer.Character)
-end
-
-if game.Players then
-    for _, player in ipairs(game:GetService("Players"):GetPlayers()) do
-        if player ~= Fatality.LocalPlayer then
-            local character = player.Character or player.CharacterAdded:Wait()
-            if Fatality.config.vars["ChamsEnemy"] or Fatality.config.vars["ChamsEnemyInv"] then
-                task.wait(0.1)
-                applyChams(character)
+for _, player in ipairs(game:GetService("Players"):GetPlayers()) do
+    if player ~= Fatality.LocalPlayer then
+        player.CharacterAdded:Connect(function(char)
+            local humanoid = char:WaitForChild("Humanoid", 5)
+            local humanoidRootPart = char:WaitForChild("HumanoidRootPart", 5)
+            if humanoid and humanoidRootPart and (Fatality.config.vars["ChamsEnemy"] or Fatality.config.vars["ChamsEnemyInv"]) then
+                clearChams(char)
+                applyChams(char)
             end
-            player.CharacterAdded:Connect(function(char)
-                task.wait(0.1)
-                if player ~= Fatality.LocalPlayer and (Fatality.config.vars["ChamsEnemy"] or Fatality.config.vars["ChamsEnemyInv"]) then
-                    applyChams(char)
-                end
-            end)
+        end)
+        if player.Character then
+            local humanoid = player.Character:FindFirstChild("Humanoid")
+            local humanoidRootPart = player.Character:FindFirstChild("HumanoidRootPart")
+            if humanoid and humanoidRootPart and (Fatality.config.vars["ChamsEnemy"] or Fatality.config.vars["ChamsEnemyInv"]) then
+                clearChams(player.Character)
+                applyChams(player.Character)
+            end
         end
     end
-
-    Fatality.Players.PlayerAdded:Connect(function(player)
-        if player ~= Fatality.LocalPlayer then
-            local character = player.Character or player.CharacterAdded:Wait()
-            if Fatality.config.vars["ChamsEnemy"] or Fatality.config.vars["ChamsEnemyInv"] then
-                task.wait(0.1)
-                applyChams(character)
-            end
-            player.CharacterAdded:Connect(function(char)
-                task.wait(0.1)
-                if player ~= Fatality.LocalPlayer and (Fatality.config.vars["ChamsEnemy"] or Fatality.config.vars["ChamsEnemyInv"]) then
-                    applyChams(char)
-                end
-            end)
-        end
-    end)
 end
+
+Fatality.Players.PlayerAdded:Connect(function(player)
+    if player ~= Fatality.LocalPlayer then
+        player.CharacterAdded:Connect(function(char)
+            local humanoid = char:WaitForChild("Humanoid", 5)
+            local humanoidRootPart = char:WaitForChild("HumanoidRootPart", 5)
+            if humanoid and humanoidRootPart and (Fatality.config.vars["ChamsEnemy"] or Fatality.config.vars["ChamsEnemyInv"]) then
+                clearChams(char)
+                applyChams(char)
+            end
+        end)
+    end
+end)
+
+Fatality.RunService.Heartbeat:Connect(function()
+    if Fatality.config.vars["ChamsEnemy"] or Fatality.config.vars["ChamsEnemyInv"] then
+        for _, player in ipairs(Fatality.Players:GetPlayers()) do
+            if player ~= Fatality.LocalPlayer and player.Character then
+                local character = player.Character
+                local humanoid = character:FindFirstChild("Humanoid")
+                local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+                if humanoid and humanoidRootPart and not chamsData[character] then
+                    applyChams(character)
+                end
+            end
+        end
+    end
+end)
 
 local lastChamsState = { ChamsEnemy = false, ChamsEnemyInv = false, ChamsEnemyAlwaysOnTop = false }
 Fatality.RunService.Heartbeat:Connect(function()
