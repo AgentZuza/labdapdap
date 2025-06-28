@@ -4032,7 +4032,9 @@ Fatality.UserInputService.InputEnded:Connect(function(input, gameProcessed)
     end
 end)
 
-Fatality.RunService.RenderStepped:Connect(function()
+local lastCameraCFrame = nil
+
+Fatality.RunService.RenderStepped:Connect(function(deltaTime)
     if not Fatality.LocalCamera or not Fatality.LocalPlayer then return end
     local cameraFOV = Fatality.LocalCamera.FieldOfView
     local viewportSize = Fatality.LocalCamera.ViewportSize
@@ -4073,7 +4075,13 @@ Fatality.RunService.RenderStepped:Connect(function()
         local targetHead = Aimbot()
         if targetHead and Fatality.LocalPlayer.Character and Fatality.LocalPlayer.Character:FindFirstChild("Head") then
             local myHeadPos = Fatality.LocalPlayer.Character.Head.Position
-            Fatality.LocalCamera.CFrame = CFrame.new(myHeadPos, targetHead.Position)
+            local targetCFrame = CFrame.new(myHeadPos, targetHead.Position)
+            if lastCameraCFrame then
+                Fatality.LocalCamera.CFrame = lastCameraCFrame:Lerp(targetCFrame, 0.35 * (deltaTime * 60)) 
+            else
+                Fatality.LocalCamera.CFrame = targetCFrame
+            end
+            lastCameraCFrame = Fatality.LocalCamera.CFrame
             local player = Fatality.Players:GetPlayerFromCharacter(targetHead.Parent)
             if player then
                 local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
@@ -4089,7 +4097,11 @@ Fatality.RunService.RenderStepped:Connect(function()
             if Fatality.config.vars["AutoFire"] then
                 AutoFire()
             end
+        else
+            lastCameraCFrame = nil
         end
+    else
+        lastCameraCFrame = nil
     end
 end)
 
