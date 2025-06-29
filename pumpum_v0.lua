@@ -54,6 +54,7 @@ Fatality.config.vars["BoxStyle"] = "Default"
 Fatality.config.vars["FOVViewSlider"] = Fatality.LocalCamera.FieldOfView
 Fatality.config.vars["ESPUpdateInterval"] = 35
 Fatality.config.vars["TargetSelection"] = 1
+Fatality.config.vars["GlowOutlineMax"] = 1
 
 ---------------------------------------------------UI
 local function StartupAnimation()
@@ -3197,7 +3198,9 @@ local VisualItemPanels = {
                     { Type = "ComboBox", Text = "Chams Materials", Var = "ChamsMaterials", Options = {"Flat", "Outline", "Glow", "Pulsating"} },
                     { Type = "CheckBox", Text = "Chams InVisible(NOT STABLE)", Var = "ChamsEnemyInv", colpicker = "InvisibleChamsCol" },
                     { Type = "ComboBox", Text = "Chams Materials Inv", Var = "ChamsMaterialsInv", Options = {"Flat", "Outline", "Glow", "Pulsating"} },
-                    { Type = "Slider", Text = "Pulsating", Var = "PulsatingSlider", Min = 0, Max = 1, Dec = 1 }
+                    { Type = "Slider", Text = "Pulsating", Var = "PulsatingSlider", Min = 0, Max = 1, Dec = 1 },
+                    { Type = "Slider", Text = "Glow Outline Min", Var = "GlowOutlineMin", Min = 0, Max = 1, Dec = 1 },
+                    { Type = "Slider", Text = "Glow Outline Max", Var = "GlowOutlineMax", Min = 0, Max = 1, Dec = 1 }
                 }
             },
         }
@@ -5007,16 +5010,29 @@ local function applyChams(character)
     chamsCharacters[character] = model or character
 end
 
+local lastPulseUpdate = 0
+local pulseValue = 0
+
 local function updateChams()
     if not Fatality.config.vars["ChamsEnemy"] and not Fatality.config.vars["ChamsEnemyInv"] then
         for character, data in pairs(chamsData) do
-            if data.highlightAlways then data.highlightAlways.Enabled = false end
-            if data.highlightOccluded then data.highlightOccluded.Enabled = false end
+            if data.highlightAlways then
+                data.highlightAlways.Enabled = false
+            end
+            if data.highlightOccluded then
+                data.highlightOccluded.Enabled = false
+            end
             for _, clone in pairs(data.clonedParts or {}) do
                 clone.Transparency = 1
             end
         end
         return
+    end
+
+    local currentTime = tick()
+    if currentTime - lastPulseUpdate >= 0.05 then
+        pulseValue = 0.5 + 0.5 * math.sin(currentTime * 2)
+        lastPulseUpdate = currentTime
     end
 
     local localPlayerCharacter = Fatality.LocalPlayer.Character
@@ -5064,7 +5080,7 @@ local function updateChams()
         end
 
         local material = Fatality.config.vars["ChamsMaterials"]
-        local materialInv = Fatality.config.vars["ChamsMaterialsInv"] 
+        local materialInv = Fatality.config.vars["ChamsMaterialsInv"]
         local alphaInv = Fatality.config.colors.alpha["InvisibleChamsCol"]
         local alphaVis = Fatality.config.colors.alpha["VisibleChamsCol"]
 
@@ -5077,19 +5093,14 @@ local function updateChams()
             data.highlightAlways.OutlineColor = Fatality.config.colors["InvisibleChamsCol"]
         elseif materialInv == "Glow" and data.highlightAlways then
             data.highlightAlways.FillTransparency = 1 - alphaInv
-            data.highlightAlways.OutlineTransparency = math.max(1 - alphaInv - 0.2, 0)
+            local maxTransparency = Fatality.config.vars["GlowOutlineMax"]
+            local minTransparency = Fatality.config.vars["GlowOutlineMin"]
+            local interpolatedTransparency = minTransparency + (maxTransparency - minTransparency) * pulseValue
+            data.highlightAlways.OutlineTransparency = 1 - interpolatedTransparency
             data.highlightAlways.OutlineColor = Fatality.config.colors["InvisibleChamsCol"]
-            if data.model then
-                local light = data.model:FindFirstChild("GlowLight") or Instance.new("PointLight", data.model)
-                light.Name = "GlowLight"
-                light.Color = Fatality.config.colors["InvisibleChamsCol"]
-                light.Brightness = 1
-                light.Range = 25
-            end
         elseif materialInv == "Pulsating" and data.highlightAlways then
             local maxTransparency = alphaInv
-            local pulse = 0.5 + 0.5 * math.sin(tick() * 2) 
-            local interpolatedTransparency = Fatality.config.vars["PulsatingSlider"] + (maxTransparency - Fatality.config.vars["PulsatingSlider"]) * pulse
+            local interpolatedTransparency = Fatality.config.vars["PulsatingSlider"] + (maxTransparency - Fatality.config.vars["PulsatingSlider"]) * pulseValue
             data.highlightAlways.FillTransparency = 1 - interpolatedTransparency
             data.highlightAlways.OutlineTransparency = 1
         end
@@ -5103,12 +5114,14 @@ local function updateChams()
             data.highlightOccluded.OutlineColor = Fatality.config.colors["VisibleChamsCol"]
         elseif material == "Glow" and data.highlightOccluded then
             data.highlightOccluded.FillTransparency = 1 - alphaVis
-            data.highlightOccluded.OutlineTransparency = math.max(1 - alphaVis - 0.2, 0)
+            local maxTransparency = Fatality.config.vars["GlowOutlineMax"] 
+            local minTransparency = Fatality.config.vars["GlowOutlineMin"] 
+            local interpolatedTransparency = minTransparency + (maxTransparency - minTransparency) * pulseValue
+            data.highlightOccluded.OutlineTransparency = 1 - interpolatedTransparency
             data.highlightOccluded.OutlineColor = Fatality.config.colors["VisibleChamsCol"]
         elseif material == "Pulsating" and data.highlightOccluded then
             local maxTransparency = alphaVis
-            local pulse = 0.5 + 0.5 * math.sin(tick() * 2)
-            local interpolatedTransparency = Fatality.config.vars["PulsatingSlider"] + (maxTransparency - Fatality.config.vars["PulsatingSlider"]) * pulse
+            local interpolatedTransparency = Fatality.config.vars["PulsatingSlider"] + (maxTransparency - Fatality.config.vars["PulsatingSlider"]) * pulseValue
             data.highlightOccluded.FillTransparency = 1 - interpolatedTransparency
             data.highlightOccluded.OutlineTransparency = 1
         end
