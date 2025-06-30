@@ -4218,9 +4218,7 @@ end
 local WeaponsFolder = repStorage:FindFirstChild("Weapons")
 
 local function updateAll()
-    if not WeaponsFolder then
-        return
-    end
+    if not WeaponsFolder then return end 
     for _, weapon in ipairs(WeaponsFolder:GetChildren()) do
         if weapon:IsA("Folder") then
             processWeapon(weapon)
@@ -4267,35 +4265,43 @@ repStorage.ChildAdded:Connect(function(child)
     end
 end)
 
-local lastConfig = {BloxStrikeAimbot = Fatality.config.vars["BloxStrikeAimbot"] or {},HackWeapons = Fatality.config.vars["HackWeapons"]}
+local lastConfig = {BloxStrikeAimbot = Fatality.config.vars["BloxStrikeAimbot"] or {}, HackWeapons = Fatality.config.vars["HackWeapons"]}
 Fatality.RunService.Heartbeat:Connect(function()
     local currentConfig = {BloxStrikeAimbot = Fatality.config.vars["BloxStrikeAimbot"] or {}, HackWeapons = Fatality.config.vars["HackWeapons"]}
     if currentConfig.BloxStrikeAimbot ~= lastConfig.BloxStrikeAimbot or currentConfig.HackWeapons ~= lastConfig.HackWeapons then
         if (table.find(currentConfig.BloxStrikeAimbot, "NoRecoil") ~= nil) ~= (table.find(lastConfig.BloxStrikeAimbot, "NoRecoil") ~= nil) then
-            for _, weapon in ipairs(WeaponsFolder:GetChildren()) do
-                if weapon:IsA("Folder") then
-                    processWeapon(weapon)
+            if WeaponsFolder then 
+                for _, weapon in ipairs(WeaponsFolder:GetChildren()) do
+                    if weapon:IsA("Folder") then
+                        processWeapon(weapon)
+                    end
                 end
             end
         end
         if currentConfig.HackWeapons ~= lastConfig.HackWeapons then
-            for _, weapon in ipairs(WeaponsFolder:GetChildren()) do
-                if weapon:IsA("Folder") then
-                    processWeaponHack(weapon)
+            if WeaponsFolder then 
+                for _, weapon in ipairs(WeaponsFolder:GetChildren()) do
+                    if weapon:IsA("Folder") then
+                        processWeaponHack(weapon)
+                    end
                 end
             end
         end
         if (table.find(currentConfig.BloxStrikeAimbot, "MoreAmmo") ~= nil) ~= (table.find(lastConfig.BloxStrikeAimbot, "MoreAmmo") ~= nil) then
-            for _, weapon in ipairs(WeaponsFolder:GetChildren()) do
-                if weapon:IsA("Folder") then
-                    processWeaponAmmo(weapon)
+            if WeaponsFolder then 
+                for _, weapon in ipairs(WeaponsFolder:GetChildren()) do
+                    if weapon:IsA("Folder") then
+                        processWeaponAmmo(weapon)
+                    end
                 end
             end
         end
         if (table.find(currentConfig.BloxStrikeAimbot, "DoubleTap") ~= nil) ~= (table.find(lastConfig.BloxStrikeAimbot, "DoubleTap") ~= nil) then
-            for _, weapon in ipairs(WeaponsFolder:GetChildren()) do
-                if weapon:IsA("Folder") then
-                    processWeaponHack(weapon)
+            if WeaponsFolder then 
+                for _, weapon in ipairs(WeaponsFolder:GetChildren()) do
+                    if weapon:IsA("Folder") then
+                        processWeaponHack(weapon)
+                    end
                 end
             end
         end
