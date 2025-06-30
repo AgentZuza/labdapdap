@@ -1,4 +1,4 @@
-﻿local Fatality = {}
+﻿local Fatality = {} 
 Fatality.tabs = {}
 Fatality.ui = {}
 Fatality.config = { vars = {}, binds = {}, colors = {} }
