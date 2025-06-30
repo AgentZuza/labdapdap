@@ -3119,7 +3119,7 @@ local aimbotItemPanels = {
                     { Type = "ComboBox", Text = "Blox Strike", Var = "BloxStrikeAimbot", Options = {"NoRecoil", "MoreAmmo", "DoubleTap"}, moresave = true },
                     { Type = "ComboBox", Text = "Hit Sound", Var = "HitSound", Options = {"None", "Metalic", "Fatality", "Exp", "Rust", "Bell"} },
                     --{ Type = "CheckBox", Text = "Sound only kill", Var = "HitSoundKill"},
-                    { Type = "Slider", Text = "Sound Valume", Var = "SoundValume", Min = 0, Max = 10, Dec = 0 },
+                    { Type = "Slider", Text = "Sound Valume", Var = "SoundValume", Min = 0, Max = 2, Dec = 1 },
                     --[[
                     { Type = "CheckBox", Text = "No Recoil(Blox)", Var = "NoRecoil" },
                     { Type = "CheckBox", Text = "More Ammo(Blox)", Var = "MoreAmmo" },
@@ -4533,6 +4533,7 @@ local function CreateESPBox(player)
 end
 
 local lastCameraCFrame = nil
+local headYOffset = nil
 
 local function UpdateESP()
     local lastUpdate = tick()
@@ -4575,14 +4576,14 @@ local function UpdateESP()
         --]]
         if aimbotActive and not Fatality.config.vars["CameraTeleport"] and not Fatality.config.vars["FreeCamera"] then
             local targetHead = Aimbot()
-            if targetHead and Fatality.LocalPlayer.Character and Fatality.LocalPlayer.Character:FindFirstChild("Head") then
-                local myHeadPos = Fatality.LocalPlayer.Character.Head.Position
-                local targetCFrame = CFrame.new(myHeadPos, targetHead.Position)
-                if lastCameraCFrame then
-                    Fatality.LocalCamera.CFrame = lastCameraCFrame:Lerp(targetCFrame, 0.7 * (deltaTime * 60)) 
-                else
-                    Fatality.LocalCamera.CFrame = targetCFrame
+            if targetHead and Fatality.LocalPlayer.Character and Fatality.LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and Fatality.LocalPlayer.Character:FindFirstChild("Head") then
+                local myRootPos = Fatality.LocalPlayer.Character.HumanoidRootPart.Position
+                if not headYOffset then
+                    headYOffset = Fatality.LocalPlayer.Character.Head.Position.Y - myRootPos.Y
                 end
+                local cameraPos = Vector3.new(myRootPos.X, myRootPos.Y + headYOffset, myRootPos.Z)
+                local targetCFrame = CFrame.new(cameraPos, targetHead.Position)
+                Fatality.LocalCamera.CFrame = targetCFrame
                 lastCameraCFrame = Fatality.LocalCamera.CFrame
                 local player = Fatality.Players:GetPlayerFromCharacter(targetHead.Parent)
                 if player then
@@ -4601,9 +4602,11 @@ local function UpdateESP()
                 end
             else
                 lastCameraCFrame = nil
+                headYOffset = nil
             end
         else
             lastCameraCFrame = nil
+            headYOffset = nil
         end
 
         local updateInterval = Fatality.config.vars["ESPUpdateInterval"] / 1000
