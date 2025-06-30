@@ -55,6 +55,7 @@ Fatality.config.vars["FOVViewSlider"] = Fatality.LocalCamera.FieldOfView
 Fatality.config.vars["ESPUpdateInterval"] = 35
 Fatality.config.vars["TargetSelection"] = 1
 Fatality.config.vars["GlowOutlineMax"] = 1
+Fatality.config.vars["SoundValume"] = 1
 
 ---------------------------------------------------UI
 local function StartupAnimation()
@@ -1311,9 +1312,16 @@ function Fatality.ui.Slider(name, varName, min, max, dec, onChange, parent)
     end
 
     local function updateDisplay(val)
+        if not min or not max or type(min) ~= "number" or type(max) ~= "number" then
+            return
+        end
+        if not val or type(val) ~= "number" then
+            val = min
+            Fatality.config.vars[varName] = min
+        end
         local norm = (val - min) / (max - min)
         fill.Size = UDim2.new(norm, 0, 1, 0)
-        valueLabel.Text = string.format("%." .. dec .. "f", val)
+        valueLabel.Text = string.format("%." .. (dec or 0) .. "f", val)
     end
 
     updateDisplay(Fatality.config.vars[varName])
@@ -3109,7 +3117,9 @@ local aimbotItemPanels = {
                     { Type = "ComboBox", Text = "Target priority", Var = "TargetPriority", Options = {"Distance", "FOV"} },
                     { Type = "ComboBox", Text = "Ignores", Var = "IgnoresAimbot", Options = {"Walls", "Teammates", "God time", "Frends Roblox"}, moresave = true },
                     { Type = "ComboBox", Text = "Blox Strike", Var = "BloxStrikeAimbot", Options = {"NoRecoil", "MoreAmmo", "DoubleTap"}, moresave = true },
-                    { Type = "ComboBox", Text = "Hit Sound", Var = "HitSound", Options = {"None", "Metalic", "Fatality", "Exp", "Rust"} },
+                    { Type = "ComboBox", Text = "Hit Sound", Var = "HitSound", Options = {"None", "Metalic", "Fatality", "Exp", "Rust", "Bell"} },
+                    --{ Type = "CheckBox", Text = "Sound only kill", Var = "HitSoundKill"},
+                    { Type = "Slider", Text = "Sound Valume", Var = "SoundValume", Min = 0, Max = 10, Dec = 0 },
                     --[[
                     { Type = "CheckBox", Text = "No Recoil(Blox)", Var = "NoRecoil" },
                     { Type = "CheckBox", Text = "More Ammo(Blox)", Var = "MoreAmmo" },
@@ -3850,15 +3860,17 @@ local function playHitSound()
     if Fatality.config.vars["HitSound"] == "None" then return end
     local sound = Instance.new("Sound")
     sound.Parent = game.Workspace
-    sound.Volume = 10
+    sound.Volume = Fatality.config.vars["SoundValume"]
     if Fatality.config.vars["HitSound"] == "Metalic" then
-        sound.SoundId = "rbxassetid://106382589720646" 
+        sound.SoundId = "rbxassetid://96599967895283" 
     elseif Fatality.config.vars["HitSound"] == "Fatality" then
-        sound.SoundId = "rbxassetid://105200859553597"
+        sound.SoundId = "rbxassetid://106299430307590"
     elseif Fatality.config.vars["HitSound"] == "Exp" then
-        sound.SoundId = "rbxassetid://72524101281710"
+        sound.SoundId = "rbxassetid://80611228518495"
     elseif Fatality.config.vars["HitSound"] == "Rust" then
         sound.SoundId = "rbxassetid://4764109000"
+    elseif Fatality.config.vars["HitSound"] == "Bell" then
+        sound.SoundId = "rbxassetid://96481309571950"
     end
     sound:Play()
     sound.Ended:Connect(function()
@@ -3903,10 +3915,10 @@ local function Aimbot()
     local candidates = {}
     local cameraCFrame = Fatality.LocalCamera.CFrame
     local cameraForward = cameraCFrame.LookVector
-    local maxFOV = Fatality.config.vars["FOVValue"] or 360
-    local maxTargets = Fatality.config.vars["TargetSelection"] or 1
-    local ignoresAimbot = Fatality.config.vars["IgnoresAimbot"] or {}
-    local targetPriority = Fatality.config.vars["TargetPriority"] or "FOV"
+    local maxFOV = Fatality.config.vars["FOVValue"] / 2
+    local maxTargets = Fatality.config.vars["TargetSelection"] 
+    local ignoresAimbot = Fatality.config.vars["IgnoresAimbot"]
+    local targetPriority = Fatality.config.vars["TargetPriority"] 
 
     if targetPriority == "FOV" and currentTarget and currentTarget.Parent then
         local player = Fatality.Players:GetPlayerFromCharacter(currentTarget.Parent)
@@ -4528,7 +4540,7 @@ local function UpdateESP()
         if not Fatality.LocalCamera or not Fatality.LocalPlayer then return end
         local cameraFOV = Fatality.LocalCamera.FieldOfView
         local viewportSize = Fatality.LocalCamera.ViewportSize
-        local maxFOV = Fatality.config.vars["FOVValue"] or 360
+        local maxFOV = Fatality.config.vars["FOVValue"] / 2
         local fovRadius = 0
         if maxFOV < 360 then
             local vFOVRad = math.rad(maxFOV)
@@ -4538,8 +4550,8 @@ local function UpdateESP()
         end
         fovCircle.Position = Vector2.new(viewportSize.X / 2, viewportSize.Y / 2)
         fovCircle.Radius = fovRadius
-        fovCircle.Color = Fatality.config.colors["ShowFOVCol"] or Color3.new(1, 1, 1)
-        fovCircle.Transparency = Fatality.config.colors.alpha["ShowFOVCol"] or 1
+        fovCircle.Color = Fatality.config.colors["ShowFOVCol"]
+        fovCircle.Transparency = Fatality.config.colors.alpha["ShowFOVCol"]
         local aimbotActive = Fatality.config.vars["enableAimbot"]
         if Fatality.config.binds["enableAimbotBind"] then
             aimbotActive = aimbotActive and holdingAimbotKey
@@ -4567,7 +4579,7 @@ local function UpdateESP()
                 local myHeadPos = Fatality.LocalPlayer.Character.Head.Position
                 local targetCFrame = CFrame.new(myHeadPos, targetHead.Position)
                 if lastCameraCFrame then
-                    Fatality.LocalCamera.CFrame = lastCameraCFrame:Lerp(targetCFrame, 0.35 * (deltaTime * 60)) 
+                    Fatality.LocalCamera.CFrame = lastCameraCFrame:Lerp(targetCFrame, 0.7 * (deltaTime * 60)) 
                 else
                     Fatality.LocalCamera.CFrame = targetCFrame
                 end
@@ -4578,7 +4590,7 @@ local function UpdateESP()
                     if humanoid then
                         if not lastHealth[player] then
                             lastHealth[player] = humanoid.Health
-                        elseif humanoid.Health < lastHealth[player] then
+                        elseif not Fatality.config.vars["HitSoundKill"] and humanoid.Health < lastHealth[player] then
                             playHitSound()
                         end
                         lastHealth[player] = humanoid.Health
@@ -5016,15 +5028,8 @@ local pulseValue = 0
 local function updateChams()
     if not Fatality.config.vars["ChamsEnemy"] and not Fatality.config.vars["ChamsEnemyInv"] then
         for character, data in pairs(chamsData) do
-            if data.highlightAlways then
-                data.highlightAlways.Enabled = false
-            end
-            if data.highlightOccluded then
-                data.highlightOccluded.Enabled = false
-            end
-            for _, clone in pairs(data.clonedParts or {}) do
-                clone.Transparency = 1
-            end
+            if data.highlightAlways then data.highlightAlways.Enabled = false end
+            if data.highlightOccluded then data.highlightOccluded.Enabled = false end
         end
         return
     end
