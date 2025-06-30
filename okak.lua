@@ -1,4 +1,4 @@
-local Fatality = {}
+﻿local Fatality = {}
 Fatality.tabs = {}
 Fatality.ui = {}
 Fatality.config = { vars = {}, binds = {}, colors = {} }
@@ -3118,7 +3118,7 @@ local aimbotItemPanels = {
                     { Type = "ComboBox", Text = "Ignores", Var = "IgnoresAimbot", Options = {"Walls", "Teammates", "God time", "Frends Roblox"}, moresave = true },
                     { Type = "ComboBox", Text = "Blox Strike", Var = "BloxStrikeAimbot", Options = {"NoRecoil", "MoreAmmo", "DoubleTap"}, moresave = true },
                     { Type = "ComboBox", Text = "Hit Sound", Var = "HitSound", Options = {"None", "Metalic", "Fatality", "Exp", "Rust", "Bell"} },
-                    --{ Type = "CheckBox", Text = "Sound only kill", Var = "HitSoundKill"},
+                    { Type = "CheckBox", Text = "Sound only kill", Var = "HitSoundKill"},
                     { Type = "Slider", Text = "Sound Valume", Var = "SoundValume", Min = 0, Max = 2, Dec = 1 },
                     --[[
                     { Type = "CheckBox", Text = "No Recoil(Blox)", Var = "NoRecoil" },
@@ -3431,6 +3431,26 @@ local flying = false
 local flyConnection = nil
 local bodyVelocity = nil
 local bodyGyro = nil 
+local function disableFly()
+    if not flying then return end
+    flying = false
+    local character = player.Character
+    if not character then return end
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if humanoid then
+        humanoid.PlatformStand = false
+    end
+    if flyConnection then 
+        flyConnection:Disconnect() 
+    end
+    if bodyVelocity then 
+        bodyVelocity:Destroy() 
+    end
+    if bodyGyro then 
+        bodyGyro:Destroy() 
+    end
+    flyConnection, bodyVelocity, bodyGyro = nil, nil, nil
+end
 local function enableFly()
     if flying then return end
     local character = player.Character
@@ -3450,6 +3470,10 @@ local function enableFly()
     bodyGyro.D = 500
     bodyGyro.Parent = rootPart
     flyConnection = Fatality.RunService.RenderStepped:Connect(function()
+        if not bodyGyro or not bodyGyro.Parent or not bodyVelocity or not bodyVelocity.Parent then
+            disableFly() 
+            return
+        end
         local moveDirection = Vector3.new(0, 0, 0)
         local camera = Fatality.LocalCamera
         bodyGyro.CFrame = CFrame.new(Vector3.new(0, 0, 0), camera.CFrame.LookVector * Vector3.new(1, 0, 1))
@@ -3478,26 +3502,6 @@ local function enableFly()
             bodyVelocity.Velocity = Vector3.new(0, 0, 0)
         end
     end)
-end
-local function disableFly()
-    if not flying then return end
-    flying = false
-    local character = player.Character
-    if not character then return end
-    local humanoid = character:FindFirstChildOfClass("Humanoid")
-    if humanoid then
-        humanoid.PlatformStand = false
-    end
-    if flyConnection then 
-        flyConnection:Disconnect() 
-    end
-    if bodyVelocity then 
-        bodyVelocity:Destroy() 
-    end
-    if bodyGyro then 
-        bodyGyro:Destroy() 
-    end
-    flyConnection, bodyVelocity, bodyGyro = nil, nil, nil
 end
 local function checkNoclip()
     if Fatality.config.vars["Noclip"] then
@@ -4044,6 +4048,47 @@ Fatality.UserInputService.InputEnded:Connect(function(input, gameProcessed)
             holdingAimbotKey = false
             currentTarget = nil
         end
+    end
+end)
+
+local lapdapdap = {}
+
+local function KillerSound(character)
+    local humanoid = character:WaitForChild("Humanoid")
+    if not lapdapdap[character] then
+        lapdapdap[character] = humanoid.Died:Connect(function()
+            local killer = humanoid:FindFirstChild("creator")
+            if killer and killer.Value == Fatality.LocalPlayer then
+                local victim = Fatality.Players:GetPlayerFromCharacter(character)
+                if victim then
+                    playHitSound()
+                end
+            end
+            lapdapdap[character]:Disconnect()
+            lapdapdap[character] = nil
+        end)
+    end
+end
+
+local function setupAllPlayers()
+    for _, otherPlayer in pairs(Fatality.Players:GetPlayers()) do
+        if otherPlayer ~= Fatality.LocalPlayer and otherPlayer.Character then
+            KillerSound(otherPlayer.Character)
+        end
+        if not lapdapdap[otherPlayer] then
+            lapdapdap[otherPlayer] = otherPlayer.CharacterAdded:Connect(KillerSound)
+        end
+    end
+end
+
+setupAllPlayers()
+
+Fatality.Players.PlayerAdded:Connect(function(newPlayer)
+    if not lapdapdap[newPlayer] then
+        lapdapdap[newPlayer] = newPlayer.CharacterAdded:Connect(KillerSound)
+    end
+    if newPlayer.Character then
+        KillerSound(newPlayer.Character)
     end
 end)
 
@@ -5616,6 +5661,3 @@ Fatality.RunService.Heartbeat:Connect(function()
         updateFullBright()
     end
 end)
-
-
-
