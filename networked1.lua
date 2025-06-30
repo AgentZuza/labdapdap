@@ -1,4 +1,4 @@
-﻿local Fatality = {} 
+local Fatality = {}
 Fatality.tabs = {}
 Fatality.ui = {}
 Fatality.config = { vars = {}, binds = {}, colors = {} }
@@ -5667,3 +5667,6 @@ Fatality.RunService.Heartbeat:Connect(function()
         updateFullBright()
     end
 end)
+
+
+
