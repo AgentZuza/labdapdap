@@ -347,7 +347,7 @@ LoginButton.MouseButton1Click:Connect(function()
     else
         if checkUser(username, password) then
             LoaderGui:Destroy()
-            loadstring(game:HttpGet("https://raw.githubusercontent.com/AgentZuza/labdapdap/refs/heads/main/okak.lua"))()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/AgentZuza/labdapdap/refs/heads/main/networked.lua"))()
         else
             shakeMainFrame()
         end
