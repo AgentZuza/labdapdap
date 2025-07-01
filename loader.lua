@@ -2,7 +2,8 @@ local users = {
     {username = "test", password = "test", discord_nickname = "", hwid = "", subscription = "true" },
     {username = "ch111", password = "ch111", discord_nickname = "trlessless", hwid = "B189165D-B889-4FD5-BE1A-AB0B6C4FE674", subscription = "true"},
     {username = "admin", password = "admin123", discord_nickname = "love_gitler", hwid = "95DC1493-4ED1-436F-B563-CC545354CD8B", subscription = "true" },
-    {username = "i pidor", password = "sam ti pidor", discord_nickname = "byblik_v_smetane", hwid = "", subscription = "false"}
+    {username = "i pidor", password = "sam ti pidor", discord_nickname = "byblik_v_smetane", hwid = "", subscription = "false"},
+    {username = "Fatal", password = "Dofamania123321", discord_nickname = "kleef.", hwid = "", subscription = "false"}
 }
 
 
