@@ -1428,7 +1428,7 @@ end
 
 function Fatality.ui.Bind(name, varName, parent)
     local bindFrame = Instance.new("Frame")
-    bindFrame.Size = UDim2.new(0, 241, 0.0, 58)
+    bindFrame.Size = UDim2.new(0, 241, 0, 58)
     bindFrame.BackgroundTransparency = 1
     bindFrame.ZIndex = 100
     bindFrame.Parent = parent
@@ -1563,7 +1563,6 @@ function Fatality.ui.Bind(name, varName, parent)
         startDotAnimation()
         local conn
         conn = Fatality.UserInputService.InputBegan:Connect(function(input, gameProcessed)
-            if gameProcessed then return end
             if binding then
                 if input.UserInputType == Enum.UserInputType.Keyboard then
                     local key = input.KeyCode
@@ -2744,6 +2743,140 @@ function Fatality.ui.ModelViewer(name, parent)
     return viewerFrame
 end
 
+function Fatality.ui.TextList(parent)
+    local help_text = (
+        "Инструкция по функциям Fatality\n\n" ..
+        "Общие понятия:\n" ..
+        "Чит-меню открывается и закрывается клавишей DEL\n" ..
+        "Bind можно сбросить нажатием ПКМ\n" ..
+        "Везде, где есть Bind, необходимо включить соответствующую функцию, чтобы он работал, есть исключения\n" ..
+        "TextEntry — поле для ввода текста, чтобы применить текст, введите его и нажмите Enter\n\n" ..
+
+        "1. Вкладка Aimbot:\n" ..
+        "   - Target Priority\n" ..
+        "     FOV ищет цель, ближайшую к центру экрана в заданном радиусе\n" ..
+        "     Distance выбирает ближайшего игрока от локалного\n\n" ..
+        "   - Ignores:\n" ..
+        "     Walls игнорирует стены, по умолчанию проверяется видимость головы противника\n" ..
+        "     Teammates игнорирует своих тимейтов\n" ..
+        "     God time игнорирует игрока у которого есть щит при спавне\n" ..
+        "     Friends Roblox игнорирует игроков которые есть в друзьях\n\n" ..
+        "   - Blox Strike:\n" ..
+        "     Все ниже перечисленное работает ТОЛЬКО В Blox Strike\n" ..        
+        "     NoRecoil убирает любую отдачу\n" ..
+        "     MoreAmmo дает много патронов при покупке оружия\n" ..
+        "     DoubleTap дает 2 выстрела, работает при покупке оружия, понижает FPS\n\n" ..
+        "   - Hit Sound:\n" ..
+        "     Воспроизводит или не воспроизводит звук при нанесении урона\n" ..
+        "     Sound only kill звук воспроизводится когда вы убиваете игрока а не наносите урон\n\n" ..
+        "   - Show FOV:\n" ..
+        "     Показывает FOV если он включен, не показывается менюшка Fatality\n\n" ..
+
+        "2. Вкладка Visual:\n" ..
+        "   - ESP:\n" ..
+        "     Update ESP задает скорость обновления ESP в мс, чем больше значение, тем реже обновление и выше FPS\n\n" ..
+        "   - View:\n" ..
+        "     Free Camera чтоб она работала нормально используйте bind и выходите из менюшки\n\n" ..
+        "   - Third Person:\n" ..
+        "     3 лицо, если доступно игроку 3 лицо не включайте, использовать по bind\n\n" ..
+        "   - FullBright:\n" ..
+        "     Отключает тени и освещение и делает все белым\n\n" ..
+        "   - Xray:\n" ..
+        "     Делает все объекты прозрычными\n\n" ..
+        "     Chams:\n" ..
+        "     AlwaysOnTop включает отображение сквозь стены\n" ..
+        "     Pulsating задает минимальное значение пульсации, максимальное определяется альфа-каналом в Color\n" ..
+        "     Glow Outline Min минимальный возможный Alpha канал Glow\n" ..
+        "     Glow Outline Max максимальный возможный Alpha канал Glow\n\n" ..
+
+        "3. Вкладка Combat:\n" ..
+        "   - LocalPlayer:\n" ..
+        "     Speed Setting Velocity изменяет скорость игрока через его параметры\n" ..
+        "     Speed Setting CFrame изменяет координаты игрока, есть шанс провалиться сквозь карту\n\n" ..
+        "   - Noclip:\n" ..
+        "     Просто полет\n\n" ..
+        "   - NoCollision:\n" ..
+        "     отключение коллизии локального игрока\n\n" ..
+        "   - Logo Chat:\n" ..
+        "     Пишет в чат Fatality.win\n\n" ..
+        "     Taunt Spam:\n" ..
+        "     Проигрывает анимации на локальном игроке\n" ..
+        "     Работает не со всеми моделями\n" ..
+        "     TauntCustom нужен для кастомных анимаций, пример(rbxassetid://507771955)\n\n" ..
+        "     Blox:\n" ..
+        "     HackWeapons работает только в Blox Strike, делает из пушки пулемет\n" ..
+        "     Itachi Mod телепортирует игрока вокруг цели при выборе Distance или внутрь цели при выборе In The Player\n" ..
+        "     Distance для Itachi определяет самого дальнего игрока и телепортирует к нему\n" ..
+        "     Team Teleport игнорирует союзников в Itachi\n" ..
+        "     Camera Teleport телепортирует камеру к противнику\n" ..
+        "     Camera Teleport Team игнорирует тимейтов"
+    )
+
+    local backgroundFrame = Instance.new("Frame")
+    backgroundFrame.Size = UDim2.new(0, 304, 0, 461)
+    backgroundFrame.Position = UDim2.new(0.025, 0, 0.035, 0)
+    backgroundFrame.BackgroundTransparency = 0
+    backgroundFrame.BackgroundColor3 = Color3.fromRGB(29, 23, 60)
+    backgroundFrame.BorderSizePixel = 0
+    backgroundFrame.ZIndex = 109
+    backgroundFrame.Parent = parent
+
+    local scrollFrame = Instance.new("ScrollingFrame")
+    scrollFrame.Size = UDim2.new(0, 304, 0, 453)
+    scrollFrame.Position = UDim2.new(0.025, 0, 0.025, 0)
+    scrollFrame.BackgroundTransparency = 1
+    scrollFrame.BorderSizePixel = 0
+    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+    scrollFrame.ScrollBarThickness = 0
+    scrollFrame.ZIndex = 110
+    scrollFrame.Parent = parent
+
+    local function createTextLabel(text, size, yOffset)
+        local textLabel = Instance.new("TextLabel")
+        textLabel.Size = UDim2.new(1, -10, 0, 0)
+        textLabel.Position = UDim2.new(0, 5, 0, yOffset)
+        textLabel.BackgroundTransparency = 1
+        textLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
+        textLabel.Font = Enum.Font.GothamBold
+        textLabel.TextSize = size
+        textLabel.TextXAlignment = Enum.TextXAlignment.Left
+        textLabel.TextYAlignment = Enum.TextYAlignment.Top
+        textLabel.TextWrapped = true
+        textLabel.ZIndex = 111
+        textLabel.Text = text or ""
+        textLabel.Parent = scrollFrame
+
+        local textSize = game:GetService("TextService"):GetTextSize(textLabel.Text, textLabel.TextSize, textLabel.Font, Vector2.new(math.max(scrollFrame.AbsoluteSize.X - 10, 1), math.huge))
+        textLabel.Size = UDim2.new(1, -10, 0, textSize.Y)
+        return textLabel, textSize.Y
+    end
+
+    local lines = {}
+    for line in help_text:gmatch("(.-)\n") do
+        table.insert(lines, line)
+    end
+    if help_text:match("[^\n]+$") then
+        table.insert(lines, help_text:match("[^\n]+$"))
+    end
+
+    local totalHeight = 0
+    local yOffset = -3
+    for i, line in ipairs(lines) do
+        if line == "" then
+            yOffset = yOffset + 10
+            totalHeight = totalHeight + 10
+        else
+            local _, height = createTextLabel(line, 12.5, yOffset)
+            yOffset = yOffset + height
+            totalHeight = totalHeight + height
+        end
+    end
+
+    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, math.max(totalHeight, 460))
+
+    return scrollFrame
+end
+
 function createItemPanelSystem(parent, itemPanels)
     local bg = Instance.new("Frame")
     bg.Size = UDim2.new(1, 0, 0, 58)
@@ -2950,6 +3083,9 @@ function createItemPanelSystem(parent, itemPanels)
                     elseif item.Type == "ModelViewer" then
                         local viewerElement = Fatality.ui.ModelViewer(item.Text, itemPanelFrame)
                         viewerElement.Position = UDim2.new(0.025, 0, 0, currentYOffset)
+                    elseif item.Type == "TextList" then
+                        local textListElement = Fatality.ui.TextList(itemPanelFrame)
+                        textListElement.Position = UDim2.new(0.025, 0, 0, currentYOffset)
                     end
                     yOffset = currentYOffset + 30
                     if item.Type == "ComboBox" then
@@ -2964,6 +3100,8 @@ function createItemPanelSystem(parent, itemPanels)
                         yOffset = yOffset + 20
                     elseif item.Type == "ModelViewer" then
                         yOffset = yOffset + 170
+                    elseif item.Type == "TextList" then
+                        yOffset = yOffset + 110
                     end
                 end
                 itemPanelFrame.CanvasSize = UDim2.new(0, 0, 0, yOffset + 10)
@@ -3115,7 +3253,7 @@ local aimbotItemPanels = {
                     --{ Type = "CheckBox", Text = "Auto fire", Var = "AutoFire" },
                     { Type = "Slider", Text = "FOV", Var = "FOVValue", Min = 0, Max = 360, Dec = 0 },
                     { Type = "ComboBox", Text = "Target priority", Var = "TargetPriority", Options = {"Distance", "FOV"} },
-                    { Type = "ComboBox", Text = "Ignores", Var = "IgnoresAimbot", Options = {"Walls", "Teammates", "God time", "Frends Roblox"}, moresave = true },
+                    { Type = "ComboBox", Text = "Ignores", Var = "IgnoresAimbot", Options = {"Walls", "Teammates", "God time", "Friends Roblox"}, moresave = true },
                     { Type = "ComboBox", Text = "Blox Strike", Var = "BloxStrikeAimbot", Options = {"NoRecoil", "MoreAmmo", "DoubleTap"}, moresave = true },
                     { Type = "ComboBox", Text = "Hit Sound", Var = "HitSound", Options = {"None", "Metalic", "Fatality", "Exp", "Rust", "Bell"} },
                     { Type = "CheckBox", Text = "Sound only kill", Var = "HitSoundKill"},
@@ -3181,6 +3319,7 @@ local VisualItemPanels = {
                     { Type = "CheckBox", Text = "Crosshair", Var = "Crosshair" },
                     { Type = "ComboBox", Text = "Style", Var = "CrosshairStyle", Options = {"Swastika", "Cross", "Gays)"} },
                     { Type = "CheckBox", Text = "FullBright", Var = "FullBright", bind = "FullBrightBind" },
+                    { Type = "CheckBox", Text = "Xray", Var = "Xray", bind = "XrayBind" },
                     --{ Type = "CheckBox", Text = "Player Line", Var = "PlayerLine"},
                     --{ Type = "ComboBox", Text = "Line Style", Var = "PlayerLineStyle", Options = {"RGB Lenta", "⚧Slave⚧"} },
                 }
@@ -3223,16 +3362,18 @@ local CombatlItemPanels = {
         ItemPanels = {
             {
                 Name = "LocalPlayer",
-                Height = 233,
+                Height = 486,
                 Pal = 1,
                 Items = {
                     { Type = "CheckBox", Text = "Speed Hack", Var = "SpeedHack" },
                     { Type = "Slider", Text = "Speed", Var = "SpeedHackSlider", Min = 0, Max = 300, Dec = 0 },
                     { Type = "ComboBox", Text = "Speed Setting", Var = "SpeedVers", Options = {"Velocity", "CFrame"} },
                     { Type = "CheckBox", Text = "Noclip", Var = "Noclip" },
-                    { Type = "CheckBox", Text = "No Collusion", Var = "NoCollusion" },
+                    { Type = "CheckBox", Text = "No Collusion", Var = "NoCollision" },
                     { Type = "CheckBox", Text = "Logo Chat", Var = "LogoChat" },
-                    { Type = "CheckBox", Text = "Fast Spin", Var = "FastSpin", bind = "FastSpinBind" }
+                    { Type = "CheckBox", Text = "Fast Spin", Var = "FastSpin", bind = "FastSpinBind" },
+                    { Type = "ComboBox", Text = "Taunt Spam", Var = "TauntSpam", Options = {"None", "Dance", "Point", "Laugh", "Cheer", "Custom"} },
+                    { Type = "TextEntry", Text = "Taunt Custom", Var = "TauntCustom" }
                 }
             },
             {
@@ -3304,6 +3445,27 @@ local ConfiglItemPanels = {
                     { Type = "CheckBox", Text = "No Recoil", Var = "sadwasdyasd" },
                     { Type = "CheckBox", Text = "No Recoil", Var = "sadwasdyasd" },
                     { Type = "CheckBox", Text = "No Recoil", Var = "sadwasdyasd" }
+                }
+            }
+        }
+    },
+    {
+        Name = "Help",
+        ItemPanels = {
+            {
+                Name = "Ru Help",
+                Height = 486,
+                Pal = 1,
+                Items = {
+                    { Type = "TextList" }
+                }
+            },
+            {
+                Name = "Eng Help",
+                Height = 486,
+                Pal = 2,
+                Items = {
+
                 }
             }
         }
@@ -3524,13 +3686,13 @@ local updateInterval = 0.5
 local function updateCharacterCollisions(character)
     for _, part in ipairs(character:GetDescendants()) do
         if part:IsA("BasePart") then
-            part.CanCollide = not Fatality.config.vars["NoCollusion"]
+            part.CanCollide = not Fatality.config.vars["NoCollision"]
         end
     end
     local descendantConnection
     descendantConnection = character.DescendantAdded:Connect(function(part)
         if part:IsA("BasePart") then
-            part.CanCollide = not Fatality.config.vars["NoCollusion"]
+            part.CanCollide = not Fatality.config.vars["NoCollision"]
         end
     end)
     character.AncestryChanged:Connect(function()
@@ -3548,7 +3710,7 @@ local function updateCollisions(character)
     local parts = workspace:GetPartsInPart(humanoidRootPart, overlapParams)
     for _, part in ipairs(parts) do
         if part:IsA("BasePart") and part ~= humanoidRootPart then
-            if Fatality.config.vars["NoCollusion"] then
+            if Fatality.config.vars["NoCollision"] then
                 if part.CanCollide then
                     affectedParts[part] = true
                     part.CanCollide = false
@@ -3568,20 +3730,20 @@ end
 player.CharacterAdded:Connect(function(character)
     character:WaitForChild("Humanoid")
 end)
-local lastNoCollusion = Fatality.config.vars["NoCollusion"]
+local lastNoCollision = Fatality.config.vars["NoCollision"]
 Fatality.RunService.Heartbeat:Connect(function()
-    if lastNoCollusion ~= Fatality.config.vars["NoCollusion"] then
-        lastNoCollusion = Fatality.config.vars["NoCollusion"]
+    if lastNoCollision ~= Fatality.config.vars["NoCollision"] then
+        lastNoCollision = Fatality.config.vars["NoCollision"]
         if player.Character then
             updateCharacterCollisions(player.Character)
-            if not Fatality.config.vars["NoCollusion"] then
+            if not Fatality.config.vars["NoCollision"] then
                 restoreCollisions()
             else
                 updateCollisions(player.Character)
             end
         end
     end
-    if Fatality.config.vars["NoCollusion"] and player.Character then
+    if Fatality.config.vars["NoCollision"] and player.Character then
         local currentTime = tick()
         if currentTime - lastUpdateTime >= updateInterval then
             lastUpdateTime = currentTime
@@ -3839,6 +4001,188 @@ Fatality.RunService.Heartbeat:Connect(function(deltaTime)
         timeSinceLastSend = 0
     end
 end)
+
+
+
+local currentTauntTrack = nil
+local lastTaunt = nil
+
+local function playTaunt(animId)
+    local character = Fatality.LocalPlayer.Character
+    if not character or not character:FindFirstChild("Humanoid") then return end
+    local humanoid = character.Humanoid
+    local animator = humanoid:FindFirstChildOfClass("Animator")
+    if not animator then return end
+
+    if currentTauntTrack then
+        currentTauntTrack:Stop()
+        currentTauntTrack:Destroy()
+        currentTauntTrack = nil
+    end
+
+    local success, result = pcall(function()
+        local animation = Instance.new("Animation")
+        animation.AnimationId = animId
+        currentTauntTrack = animator:LoadAnimation(animation)
+        currentTauntTrack.Looped = true
+        currentTauntTrack:Play()
+        return true
+    end)
+
+    if not success then
+        return false
+    end
+    return true
+end
+
+local function stopTaunt()
+    if currentTauntTrack then
+        currentTauntTrack:Stop()
+        currentTauntTrack:Destroy()
+        currentTauntTrack = nil
+    end
+end
+
+Fatality.LocalPlayer.CharacterAdded:Connect(function()
+    stopTaunt()
+    lastTaunt = nil
+end)
+
+Fatality.RunService.Heartbeat:Connect(function()
+    if Fatality.config.vars["TauntSpam"] == "None" then
+        stopTaunt()
+        lastTaunt = nil
+        return
+    end
+
+    if Fatality.config.vars["TauntSpam"] ~= lastTaunt then
+        stopTaunt()
+        local animId
+        if Fatality.config.vars["TauntSpam"] == "Dance" then
+            animId = "rbxassetid://507771955"
+        elseif Fatality.config.vars["TauntSpam"] == "Point" then
+            animId = "rbxassetid://507770453"
+        elseif Fatality.config.vars["TauntSpam"] == "Laugh" then
+            animId = "rbxassetid://507770818"
+        elseif Fatality.config.vars["TauntSpam"] == "Cheer" then
+            animId = "rbxassetid://507770239"
+        elseif Fatality.config.vars["TauntSpam"] == "Custom" then
+            animId = Fatality.config.vars["TauntCustom"] ~= "" and Fatality.config.vars["TauntCustom"] or nil
+        end
+
+        if animId and playTaunt(animId) then
+            lastTaunt = Fatality.config.vars["TauntSpam"]
+        else
+            lastTaunt = nil
+            stopTaunt()
+        end
+    end
+end)
+
+
+
+local originalTransparencies = {}
+local isXrayActive = false
+local isBindHeld = false
+
+local function setTransparency(part, transparency)
+    if part:IsA("BasePart") and not part:IsA("Terrain") then
+        if not originalTransparencies[part] then
+            originalTransparencies[part] = part.Transparency
+        end
+        part.Transparency = transparency
+    end
+end
+
+local function applyXray(enable)
+    if enable then
+        for _, part in ipairs(game.Workspace:GetDescendants()) do
+            setTransparency(part, 0.5)
+        end
+        isXrayActive = true
+    else
+        for part, originalTransparency in pairs(originalTransparencies) do
+            if part.Parent then
+                part.Transparency = originalTransparency
+            end
+        end
+        originalTransparencies = {}
+        isXrayActive = false
+    end
+end
+
+local function onPartAdded(part)
+    if isXrayActive and part:IsA("BasePart") and not part:IsA("Terrain") then
+        setTransparency(part, 0.5)
+    end
+end
+
+Fatality.UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if not gameProcessed and Fatality.config.binds["XrayBind"] and Fatality.config.vars["Xray"] then
+        local bind = Fatality.config.binds["XrayBind"]
+        if (input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == bind) or
+           (input.UserInputType ~= Enum.UserInputType.Keyboard and input.UserInputType == bind) then
+            isBindHeld = true
+            if not isXrayActive then
+                applyXray(true)
+            end
+        end
+    end
+end)
+
+Fatality.UserInputService.InputEnded:Connect(function(input, gameProcessed)
+    if not gameProcessed and Fatality.config.binds["XrayBind"] then
+        local bind = Fatality.config.binds["XrayBind"]
+        if (input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == bind) or
+           (input.UserInputType ~= Enum.UserInputType.Keyboard and input.UserInputType == bind) then
+            isBindHeld = false
+            if not Fatality.config.vars["Xray"] and isXrayActive then
+                applyXray(false)
+            else
+                if isXrayActive then
+                    applyXray(false)
+                end
+            end
+        end
+    end
+end)
+
+Fatality.RunService.Heartbeat:Connect(function()
+    local hasBind = Fatality.config.binds["XrayBind"] ~= nil
+    local isXrayOn = Fatality.config.vars["Xray"]
+
+    if isXrayOn then
+        if hasBind then
+            if isBindHeld then
+                if not isXrayActive then
+                    applyXray(true)
+                end
+            else
+                if isXrayActive then
+                    applyXray(false)
+                end
+            end
+        else
+            if not isXrayActive then
+                applyXray(true)
+            end
+        end
+    else
+        if isXrayActive then
+            applyXray(false)
+        end
+    end
+end)
+
+game.Workspace.DescendantAdded:Connect(onPartAdded)
+
+Fatality.LocalPlayer.CharacterAdded:Connect(function()
+    if isXrayActive then
+        task.wait()
+        applyXray(true)
+    end
+end)
+
 --]]
 ---------------------------------------------------Aimbot
 local chamsCharacters = {}
@@ -3904,7 +4248,7 @@ local function IsValidTarget(player, head, myTeam, myUserId, ignoresAimbot)
     if not humanoid or humanoid.Health <= 0 then return false end
     local isGod = table.find(ignoresAimbot, "God time") and player.Character:FindFirstChild("ForceField") ~= nil
     local isSameTeam = table.find(ignoresAimbot, "Teammates") and player.Team == myTeam
-    local isFriend = table.find(ignoresAimbot, "Frends Roblox") and Fatality.Players.LocalPlayer:IsFriendsWith(player.UserId)
+    local isFriend = table.find(ignoresAimbot, "Friends Roblox") and Fatality.Players.LocalPlayer:IsFriendsWith(player.UserId)
     return not isGod and not isSameTeam and not isFriend
 end
 
@@ -4608,7 +4952,7 @@ local function UpdateESP()
         if Fatality.config.binds["enableAimbotBind"] then
             aimbotActive = aimbotActive and holdingAimbotKey
         end
-        fovCircle.Visible = aimbotActive and Fatality.config.vars["ShowFOV"] and maxFOV < 180 and Fatality.config.vars["TargetPriority"] == "FOV" and not Fatality.config.vars["FreeCamera"]
+        fovCircle.Visible = aimbotActive and Fatality.config.vars["ShowFOV"] and maxFOV < 180 and Fatality.config.vars["TargetPriority"] == "FOV" and not Fatality.config.vars["FreeCamera"] and Menuframe.Visible == false 
         --[[
         snapLine.Color = Fatality.config.colors["AimbotSnaplineCol"] or Color3.new(1, 0, 0)
         snapLine.Transparency = Fatality.config.colors.alpha["AimbotSnaplineCol"] or 1
@@ -4634,7 +4978,15 @@ local function UpdateESP()
                 end
                 local cameraPos = Vector3.new(myRootPos.X, myRootPos.Y + headYOffset, myRootPos.Z)
                 local targetCFrame = CFrame.new(cameraPos, targetHead.Position)
-                Fatality.LocalCamera.CFrame = targetCFrame
+                local currentPos = Fatality.LocalCamera.CFrame.Position
+                local targetPos = targetCFrame.Position
+                local distance = (currentPos - targetPos).Magnitude
+                if distance > 0.1 then
+                    local newPos = currentPos:Lerp(targetPos, 0.1)
+                    Fatality.LocalCamera.CFrame = CFrame.new(newPos, targetHead.Position)
+                else
+                    Fatality.LocalCamera.CFrame = targetCFrame
+                end
                 lastCameraCFrame = Fatality.LocalCamera.CFrame
                 local player = Fatality.Players:GetPlayerFromCharacter(targetHead.Parent)
                 if player then
@@ -5667,6 +6019,3 @@ Fatality.RunService.Heartbeat:Connect(function()
         updateFullBright()
     end
 end)
-
-
-
