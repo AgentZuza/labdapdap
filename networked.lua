@@ -3520,30 +3520,48 @@ end
 local function SpeedhackCFrame()
     if not (Fatality.config.vars["SpeedHack"] and Fatality.config.vars["SpeedVers"] == "CFrame") then return end
     if speedhackConnection then return end
+    local targetLookVector = nil
     speedhackConnection = Fatality.RunService.RenderStepped:Connect(function(deltaTime)
         local character = player.Character
         if not character then return end
         local hrp = character:FindFirstChild("HumanoidRootPart")
-        if not hrp then return end
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        if not hrp or not humanoid then return end
         local currentPos = hrp.Position
-        local currentYVel = hrp.AssemblyLinearVelocity.Y
         local moveDir = Vector3.new(0, 0, 0)
         if userInput:IsKeyDown(Enum.KeyCode.W) then moveDir = moveDir + camera.CFrame.LookVector end
         if userInput:IsKeyDown(Enum.KeyCode.S) then moveDir = moveDir - camera.CFrame.LookVector end
         if userInput:IsKeyDown(Enum.KeyCode.A) then moveDir = moveDir - camera.CFrame.RightVector end
         if userInput:IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + camera.CFrame.RightVector end
         moveDir = Vector3.new(moveDir.X, 0, moveDir.Z)
-        if moveDir.Magnitude > 0 then moveDir = moveDir.Unit end
-        local speed = Fatality.config.vars["SpeedHackSlider"] or 16
-        local horizontalDelta = moveDir * speed * deltaTime
-        local verticalDelta = currentYVel * deltaTime
-        if userInput:IsKeyDown(Enum.KeyCode.Space) then
-            verticalDelta = verticalDelta + (Fatality.config.vars["JumpBloxSlider"] or 0) * deltaTime
+        local verticalDelta = 0
+        if userInput:IsKeyDown(Enum.KeyCode.Space) and humanoid.FloorMaterial ~= Enum.Material.Air then
+            verticalDelta = Fatality.config.vars["JumpBloxSlider"] * deltaTime
+            humanoid.JumpHeight = Fatality.config.vars["JumpBloxSlider"] 
+            humanoid.Jump = true
         elseif userInput:IsKeyDown(Enum.KeyCode.LeftControl) then
-            verticalDelta = verticalDelta - 20 * deltaTime
+            verticalDelta = -20 * deltaTime
+            humanoid.JumpHeight = 0
+        else
+            humanoid.JumpHeight = 0
         end
-        local newPos = Vector3.new(currentPos.X + horizontalDelta.X, currentPos.Y + verticalDelta, currentPos.Z + horizontalDelta.Z)
-        hrp.CFrame = CFrame.new(newPos, newPos + hrp.CFrame.LookVector)
+        if moveDir.Magnitude > 0 then
+            moveDir = moveDir.Unit
+            local speed = Fatality.config.vars["SpeedHackSlider"] 
+            local horizontalDelta = moveDir * speed * deltaTime
+            local newPos = Vector3.new(currentPos.X + horizontalDelta.X, currentPos.Y + verticalDelta, currentPos.Z + horizontalDelta.Z)
+            targetLookVector = targetLookVector and targetLookVector:Lerp(moveDir, 0.05) or moveDir
+            local newCFrame = CFrame.new(newPos, newPos + targetLookVector)
+            hrp.CFrame = hrp.CFrame:Lerp(newCFrame, 0.4)
+            humanoid.WalkSpeed = player:FindFirstChild("MovementSpeed") and player.MovementSpeed.Value or defaultWalkSpeed 
+        else
+            targetLookVector = nil
+            humanoid.WalkSpeed = player:FindFirstChild("MovementSpeed") and player.MovementSpeed.Value or defaultWalkSpeed
+            humanoid.JumpHeight = Fatality.config.vars["JumpBloxSlider"] 
+            if userInput:IsKeyDown(Enum.KeyCode.Space) and humanoid.FloorMaterial ~= Enum.Material.Air then
+                humanoid.Jump = true
+            end
+        end
     end)
 end
 
