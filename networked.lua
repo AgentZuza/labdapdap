@@ -2877,7 +2877,7 @@ function Fatality.ui.TextList(parent)
     return scrollFrame
 end
 
-function createItemPanelSystem(parent, itemPanels)
+function createItemPanelSystem(parent, itemPanels, defaultPanelIndex)
     local bg = Instance.new("Frame")
     bg.Size = UDim2.new(1, 0, 0, 58)
     bg.Position = UDim2.new(0, 0, 0, 0)
@@ -3155,7 +3155,22 @@ function createItemPanelSystem(parent, itemPanels)
         end)
     end
 
-    if #itemPanelContentFrames > 0 then
+    if defaultPanelIndex and itemPanelContentFrames[defaultPanelIndex] then
+        for i, frame in ipairs(itemPanelContentFrames) do
+            frame.Visible = (i == defaultPanelIndex)
+            itemPanelButtons[i].TextColor3 = (i == defaultPanelIndex) and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(220, 220, 220)
+            local line = itemPanelButtons[i]:FindFirstChild("ActiveLine")
+            if line then
+                if i == defaultPanelIndex then
+                    line.Size = UDim2.new(0, itemPanelButtons[i].TextBounds.X, 0, 2)
+                    line.Position = UDim2.new(0.5, -itemPanelButtons[i].TextBounds.X / 2, 1, 0)
+                    line.Transparency = 0
+                else
+                    line:Destroy()
+                end
+            end
+        end
+    elseif #itemPanelContentFrames > 0 then
         itemPanelContentFrames[1].Visible = true
         itemPanelButtons[1].TextColor3 = Color3.fromRGB(255, 255, 255)
         local firstLine = itemPanelButtons[1]:FindFirstChild("ActiveLine")
@@ -3163,18 +3178,17 @@ function createItemPanelSystem(parent, itemPanels)
             firstLine.Size = UDim2.new(0, itemPanelButtons[1].TextBounds.X, 0, 2)
             firstLine.Position = UDim2.new(0.5, -itemPanelButtons[1].TextBounds.X / 2, 1, 0)
             firstLine.Transparency = 0
-            firstLine.Visible = true
         end
     end
 end
 
-local function createTab(tabName, itemPanels)
+local function createTab(tabName, itemPanels, isDefaultTab, defaultPanelIndex)
     local tabButton = Instance.new("TextButton")
     tabButton.AutomaticSize = Enum.AutomaticSize.X
     tabButton.Size = UDim2.new(0, 0, 1, 0)
     tabButton.BackgroundTransparency = 1
     tabButton.Text = tabName
-    tabButton.TextColor3 = Color3.fromRGB(220, 220, 220)
+    tabButton.TextColor3 = isDefaultTab and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(220, 220, 220)
     tabButton.Font = Enum.Font.GothamBold
     tabButton.TextSize = 35
     tabButton.ZIndex = 24
@@ -3185,7 +3199,7 @@ local function createTab(tabName, itemPanels)
     tabContent.Size = UDim2.new(0.98, 0, 0.75, 0)
     tabContent.Position = UDim2.new(0.01, 0, 0.23, 0)
     tabContent.BackgroundColor3 = Color3.fromRGB(29, 23, 60)
-    tabContent.Visible = false
+    tabContent.Visible = isDefaultTab or false
     tabContent.ZIndex = 23
     tabContent.Parent = Menuframe
 
@@ -3236,7 +3250,17 @@ local function createTab(tabName, itemPanels)
     end)
 
     if itemPanels then
-        createItemPanelSystem(tabContent, itemPanels)
+        createItemPanelSystem(tabContent, itemPanels, isDefaultTab and defaultPanelIndex or nil)
+    end
+
+    if isDefaultTab then
+        local activeLine = Instance.new("Frame")
+        activeLine.Name = "ActiveLine"
+        activeLine.Size = UDim2.new(1, 0, 0, 3)
+        activeLine.Position = UDim2.new(0, 0, 0.8, 0)
+        activeLine.BackgroundColor3 = Color3.fromRGB(195, 44, 95)
+        activeLine.ZIndex = tabButton.ZIndex + 1
+        activeLine.Parent = tabButton
     end
 end
 
@@ -3480,7 +3504,7 @@ createTab("Aimbot", aimbotItemPanels)
 createTab("Visual", VisualItemPanels)
 createTab("Combat", CombatlItemPanels)
 createTab("Misc")
-createTab("Config", ConfiglItemPanels)
+createTab("Config", ConfiglItemPanels, true, 3)
 ---------------------------------------------------Combat
 local player = Fatality.LocalPlayer
 local userInput = Fatality.UserInputService
@@ -3520,6 +3544,7 @@ end
 local function SpeedhackCFrame()
     if not (Fatality.config.vars["SpeedHack"] and Fatality.config.vars["SpeedVers"] == "CFrame") then return end
     if speedhackConnection then return end
+    if Fatality.config.vars["Noclip"] then return end
     local targetLookVector = nil
     speedhackConnection = Fatality.RunService.RenderStepped:Connect(function(deltaTime)
         local character = player.Character
@@ -3645,9 +3670,9 @@ local function enableFly()
     bodyVelocity.Velocity = Vector3.new(0, 0, 0)
     bodyVelocity.Parent = rootPart
     bodyGyro = Instance.new("BodyGyro")
-    bodyGyro.MaxTorque = Vector3.new(math.huge, 0, math.huge) 
-    bodyGyro.P = 10000
-    bodyGyro.D = 500
+    bodyGyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge) 
+    bodyGyro.P = 50000
+    bodyGyro.D = 2000
     bodyGyro.Parent = rootPart
     flyConnection = Fatality.RunService.RenderStepped:Connect(function()
         if not bodyGyro or not bodyGyro.Parent or not bodyVelocity or not bodyVelocity.Parent then
@@ -3676,6 +3701,9 @@ local function enableFly()
             moveDirection = moveDirection - Vector3.new(0, 1, 0) 
         end
         local currentSpeed = humanoid.WalkSpeed
+        if Fatality.config.vars["SpeedHack"] and Fatality.config.vars["SpeedVers"] == "CFrame" then
+            currentSpeed = Fatality.config.vars["SpeedHackSlider"]
+        end
         if moveDirection.Magnitude > 0 then
             bodyVelocity.Velocity = moveDirection.Unit * currentSpeed
         else
