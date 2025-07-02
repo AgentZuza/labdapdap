@@ -2743,74 +2743,145 @@ function Fatality.ui.ModelViewer(name, parent)
     return viewerFrame
 end
 
-function Fatality.ui.TextList(parent)
-    local help_text = (
-        "Инструкция по функциям Fatality\n\n" ..
-        "Общие понятия:\n" ..
-        "Чит-меню открывается и закрывается клавишей DEL\n" ..
-        "Bind можно сбросить нажатием ПКМ\n" ..
-        "Везде, где есть Bind, необходимо включить соответствующую функцию, чтобы он работал, есть исключения\n" ..
-        "TextEntry — поле для ввода текста, чтобы применить текст, введите его и нажмите Enter\n\n" ..
+function Fatality.ui.TextList(parent, lang)
+    local help_text
+    if lang == "ru" then
+        help_text = (
+            "Инструкция по функциям Fatality\n\n" ..
+            "Общие понятия:\n" ..
+            "Чит-меню открывается и закрывается клавишей DEL\n" ..
+            "Bind можно сбросить нажатием ПКМ\n" ..
+            "Везде, где есть Bind, необходимо включить соответствующую функцию, чтобы он работал, есть исключения\n" ..
+            "TextEntry — поле для ввода текста, чтобы применить текст, введите его и нажмите Enter\n\n" ..
 
-        "1. Вкладка Aimbot:\n" ..
-        "   - Target Priority\n" ..
-        "     FOV ищет цель, ближайшую к центру экрана в заданном радиусе\n" ..
-        "     Distance выбирает ближайшего игрока от локалного\n\n" ..
-        "   - Ignores:\n" ..
-        "     Walls игнорирует стены, по умолчанию проверяется видимость головы противника\n" ..
-        "     Teammates игнорирует своих тимейтов\n" ..
-        "     God time игнорирует игрока у которого есть щит при спавне\n" ..
-        "     Friends Roblox игнорирует игроков которые есть в друзьях\n\n" ..
-        "   - Blox Strike:\n" ..
-        "     Все ниже перечисленное работает ТОЛЬКО В Blox Strike\n" ..        
-        "     NoRecoil убирает любую отдачу\n" ..
-        "     MoreAmmo дает много патронов при покупке оружия\n" ..
-        "     DoubleTap дает 2 выстрела, работает при покупке оружия, понижает FPS\n\n" ..
-        "   - Hit Sound:\n" ..
-        "     Воспроизводит или не воспроизводит звук при нанесении урона\n" ..
-        "     Sound only kill звук воспроизводится когда вы убиваете игрока а не наносите урон\n\n" ..
-        "   - Show FOV:\n" ..
-        "     Показывает FOV если он включен, не показывается менюшка Fatality\n\n" ..
+            "**1. Вкладка Aimbot:**\n" ..
+            "  *- Target Priority:*\n" ..
+            "     FOV ищет цель, ближайшую к центру экрана в заданном радиусе\n" ..
+            "     Distance выбирает ближайшего игрока от локалного\n\n" ..
+            "  *- Ignores:*\n" ..
+            "     Walls игнорирует стены, по умолчанию проверяется видимость головы противника\n" ..
+            "     Teammates игнорирует своих тимейтов\n" ..
+            "     God time игнорирует игрока у которого есть щит при спавне\n" ..
+            "     Friends Roblox игнорирует игроков которые есть в друзьях\n\n" ..
+            "  *- Blox Strike:*\n" ..
+            "     Все ниже перечисленное работает ТОЛЬКО В Blox Strike\n" ..        
+            "     NoRecoil убирает любую отдачу\n" ..
+            "     MoreAmmo дает много патронов при покупке оружия\n" ..
+            "     DoubleTap дает 2 выстрела, работает при покупке оружия, понижает FPS\n\n" ..
+            "  *- Hit Sound:*\n" ..
+            "     Воспроизводит или не воспроизводит звук при нанесении урона\n" ..
+            "     Sound only kill звук воспроизводится когда вы убиваете игрока а не наносите урон\n\n" ..
+            "  *- Show FOV:*\n" ..
+            "     Показывает FOV если он включен, не показывается менюшка Fatality\n\n" ..
 
-        "2. Вкладка Visual:\n" ..
-        "   - ESP:\n" ..
-        "     Update ESP задает скорость обновления ESP в мс, чем больше значение, тем реже обновление и выше FPS\n\n" ..
-        "   - View:\n" ..
-        "     Free Camera чтоб она работала нормально используйте bind и выходите из менюшки\n\n" ..
-        "   - Third Person:\n" ..
-        "     3 лицо, если доступно игроку 3 лицо не включайте, использовать по bind\n\n" ..
-        "   - FullBright:\n" ..
-        "     Отключает тени и освещение и делает все белым\n\n" ..
-        "   - Xray:\n" ..
-        "     Делает все объекты прозрычными\n\n" ..
-        "     Chams:\n" ..
-        "     AlwaysOnTop включает отображение сквозь стены\n" ..
-        "     Pulsating задает минимальное значение пульсации, максимальное определяется альфа-каналом в Color\n" ..
-        "     Glow Outline Min минимальный возможный Alpha канал Glow\n" ..
-        "     Glow Outline Max максимальный возможный Alpha канал Glow\n\n" ..
+            "**2. Вкладка Visual:**\n" ..
+            "  *- ESP:*\n" ..
+            "     Update ESP задает скорость обновления ESP в мс, чем больше значение, тем реже обновление и выше FPS\n\n" ..
+            "  *- View:*\n" ..
+            "     Free Camera чтоб она работала нормально используйте bind и выходите из менюшки\n\n" ..
+            "  *- Third Person:*\n" ..
+            "     3 лицо, если доступно игроку 3 лицо не включайте, использовать по bind\n\n" ..
+            "  *- FullBright:*\n" ..
+            "     Отключает тени и освещение и делает все белым\n\n" ..
+            "  *- Xray:*\n" ..
+            "     Делает все объекты прозрычными\n\n" ..
+            "  *- Chams:*\n" ..
+            "     AlwaysOnTop включает отображение сквозь стены\n" ..
+            "     Pulsating задает минимальное значение пульсации, максимальное определяется альфа-каналом в Color\n" ..
+            "     Glow Outline Min минимальный возможный Alpha канал Glow\n" ..
+            "     Glow Outline Max максимальный возможный Alpha канал Glow\n\n" ..
 
-        "3. Вкладка Combat:\n" ..
-        "   - LocalPlayer:\n" ..
-        "     Speed Setting Velocity изменяет скорость игрока через его параметры\n" ..
-        "     Speed Setting CFrame изменяет координаты игрока, есть шанс провалиться сквозь карту\n\n" ..
-        "   - Noclip:\n" ..
-        "     Просто полет\n\n" ..
-        "   - NoCollision:\n" ..
-        "     отключение коллизии локального игрока\n\n" ..
-        "   - Logo Chat:\n" ..
-        "     Пишет в чат Fatality.win\n\n" ..
-        "     Taunt Spam:\n" ..
-        "     Проигрывает анимации на локальном игроке\n" ..
-        "     Работает не со всеми моделями\n" ..
-        "     TauntCustom нужен для кастомных анимаций, пример(rbxassetid://507771955)\n\n" ..
-        "     Blox:\n" ..
-        "     HackWeapons работает только в Blox Strike, делает из пушки пулемет\n" ..
-        "     Itachi Mod телепортирует игрока вокруг цели при выборе Distance или внутрь цели при выборе In The Player\n" ..
-        "     Distance для Itachi определяет самого дальнего игрока и телепортирует к нему\n" ..
-        "     Team Teleport игнорирует союзников в Itachi\n" ..
-        "     Camera Teleport телепортирует камеру к противнику\n" ..
-        "     Camera Teleport Team игнорирует тимейтов"
-    )
+            "**3. Вкладка Combat:**\n" ..
+            "  *- LocalPlayer:*\n" ..
+            "     Speed Setting Velocity изменяет скорость игрока через его параметры\n" ..
+            "     Speed Setting CFrame изменяет координаты игрока, есть шанс провалиться сквозь карту\n\n" ..
+            "  *- Noclip:*\n" ..
+            "     Просто полет\n\n" ..
+            "  *- NoCollision:*\n" ..
+            "     отключение коллизии локального игрока\n\n" ..
+            "  *- Logo Chat:*\n" ..
+            "     Пишет в чат Fatality.win\n\n" ..
+            "  *- Taunt Spam:*\n" ..
+            "     Проигрывает анимации на локальном игроке\n" ..
+            "     Работает не со всеми моделями\n" ..
+            "     TauntCustom нужен для кастомных анимаций, пример(rbxassetid://507771955)\n\n" ..
+            "  *- Blox:*\n" ..
+            "     HackWeapons работает только в Blox Strike, делает из пушки пулемет\n" ..
+            "     Itachi Mod телепортирует игрока вокруг цели при выборе Distance или внутрь цели при выборе In The Player\n" ..
+            "     Distance для Itachi определяет самого дальнего игрока и телепортирует к нему\n" ..
+            "     Team Teleport игнорирует союзников в Itachi\n" ..
+            "     Camera Teleport телепортирует камеру к противнику\n" ..
+            "     Camera Teleport Team игнорирует тимейтов"
+        )
+    elseif lang == "eng" then
+        help_text = (
+            "Instructions for Fatality Functions\n\n" ..
+            "General Concepts:\n" ..
+            "The cheat menu is opened and closed with the DEL key\n" ..
+            "Binds can be reset by right-clicking (RMB)\n" ..
+            "Wherever there is a Bind, the corresponding function must be enabled for it to work, with some exceptions\n" ..
+            "TextEntry — text input field, to apply the text, enter it and press Enter\n\n" ..
+
+            "**1. Aimbot Tab:**\n" ..
+            "  *- Target Priority:*\n" ..
+            "     FOV targets the enemy closest to the center of the screen within a set radius\n" ..
+            "     Distance selects the closest player to the local player\n\n" ..
+            "  *- Ignores:*\n" ..
+            "     Walls ignores walls, by default checks for enemy head visibility\n" ..
+            "     Teammates ignores teammates\n" ..
+            "     God time ignores players with a spawn shield\n" ..
+            "     Friends Roblox ignores players who are Roblox friends\n\n" ..
+            "  *- Blox Strike:*\n" ..
+            "     The following only works in *Blox Strike*\n" ..        
+            "     NoRecoil removes all recoil\n" ..
+            "     MoreAmmo gives extra ammo when purchasing weapons\n" ..
+            "     DoubleTap enables double shots, works when purchasing weapons, lowers *FPS*\n\n" ..
+            "  *- Hit Sound:*\n" ..
+            "     Plays or does not play a sound when dealing damage\n" ..
+            "     Sound only kill sound plays only when you kill a player, not when dealing damage\n\n" ..
+            "  *- Show FOV:*\n" ..
+            "     Shows FOV if enabled, does not show the Fatality menu\n\n" ..
+
+            "**2. Visual Tab:**\n" ..
+            "  *- ESP:*\n" ..
+            "     Update ESP sets the ESP refresh rate in ms, higher values mean less frequent updates and higher *FPS*\n\n" ..
+            "  *- View:*\n" ..
+            "     Free Camera for proper operation, use a bind and exit the menu\n\n" ..
+            "  *- Third Person:*\n" ..
+            "     Third person mode, do not enable if third person is already available, use with bind\n\n" ..
+            "  *- FullBright:*\n" ..
+            "     Disables shadows and lighting, making everything white\n\n" ..
+            "  *- Xray:*\n" ..
+            "     Makes all objects transparent\n\n" ..
+            "  *- Chams:*\n" ..
+            "     AlwaysOnTop enables visibility through walls\n" ..
+            "     Pulsating sets the minimum pulsation value, maximum determined by the alpha channel in *Color*\n" ..
+            "     Glow Outline Min minimum possible alpha channel for Glow\n" ..
+            "     Glow Outline Max maximum possible alpha channel for Glow\n\n" ..
+
+            "**3. Combat Tab:**\n" ..
+            "  *- LocalPlayer:*\n" ..
+            "     Speed Setting Velocity changes player speed via parameters\n" ..
+            "     Speed Setting CFrame changes player coordinates, may cause falling through the map\n\n" ..
+            "  *- Noclip:*\n" ..
+            "     Enables flight\n\n" ..
+            "  *- NoCollision:*\n" ..
+            "     Disables collision for the local player\n\n" ..
+            "  *- Logo Chat:*\n" ..
+            "     Writes Fatality.win in chat\n\n" ..
+            "  *- Taunt Spam:*\n" ..
+            "     Plays animations on the local player\n" ..
+            "     Does not work with all models\n" ..
+            "     TauntCustom used for custom animations, example (rbxassetid://507771955)\n\n" ..
+            "  *- Blox:*\n" ..
+            "     HackWeapons works only in Blox Strike, turns weapons into machine guns\n" ..
+            "     Itachi Mod teleports the player around the target when selecting Distance or inside the target when selecting In The Player\n" ..
+            "     Distance for Itachi targets the farthest player and teleports to them\n" ..
+            "     Team Teleport ignores teammates in Itachi\n" ..
+            "     Camera Teleport teleports the camera to the enemy\n" ..
+            "     Camera Teleport Team ignores teammates"
+        )
+    end
 
     local backgroundFrame = Instance.new("Frame")
     backgroundFrame.Size = UDim2.new(0, 304, 0, 461)
@@ -2831,13 +2902,13 @@ function Fatality.ui.TextList(parent)
     scrollFrame.ZIndex = 110
     scrollFrame.Parent = parent
 
-    local function createTextLabel(text, size, yOffset)
+    local function createTextLabel(text, size, yOffset, font, xOffset, width)
         local textLabel = Instance.new("TextLabel")
-        textLabel.Size = UDim2.new(1, -10, 0, 0)
-        textLabel.Position = UDim2.new(0, 5, 0, yOffset)
+        textLabel.Size = UDim2.new(0, width, 0, 0)
+        textLabel.Position = UDim2.new(0, xOffset, 0, yOffset)
         textLabel.BackgroundTransparency = 1
         textLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
-        textLabel.Font = Enum.Font.GothamBold
+        textLabel.Font = font
         textLabel.TextSize = size
         textLabel.TextXAlignment = Enum.TextXAlignment.Left
         textLabel.TextYAlignment = Enum.TextYAlignment.Top
@@ -2846,9 +2917,9 @@ function Fatality.ui.TextList(parent)
         textLabel.Text = text or ""
         textLabel.Parent = scrollFrame
 
-        local textSize = game:GetService("TextService"):GetTextSize(textLabel.Text, textLabel.TextSize, textLabel.Font, Vector2.new(math.max(scrollFrame.AbsoluteSize.X - 10, 1), math.huge))
-        textLabel.Size = UDim2.new(1, -10, 0, textSize.Y)
-        return textLabel, textSize.Y
+        local textSize = game:GetService("TextService"):GetTextSize(textLabel.Text, textLabel.TextSize, textLabel.Font, Vector2.new(width, math.huge))
+        textLabel.Size = UDim2.new(0, width, 0, textSize.Y)
+        return textLabel, textSize.Y, textSize.X
     end
 
     local lines = {}
@@ -2861,14 +2932,86 @@ function Fatality.ui.TextList(parent)
 
     local totalHeight = 0
     local yOffset = -3
-    for i, line in ipairs(lines) do
+    local maxWidth = 294
+    for _, line in ipairs(lines) do
         if line == "" then
             yOffset = yOffset + 10
             totalHeight = totalHeight + 10
         else
-            local _, height = createTextLabel(line, 12.5, yOffset)
-            yOffset = yOffset + height
-            totalHeight = totalHeight + height
+            local segments = {}
+            local current = ""
+            local i = 1
+            while i <= #line do
+                if line:sub(i, i+1) == "**" then
+                    if current ~= "" then
+                        table.insert(segments, { text = current, font = Enum.Font.GothamBold })
+                        current = ""
+                    end
+                    i = i + 2
+                    local boldText = ""
+                    while i <= #line and line:sub(i, i+1) ~= "**" do
+                        boldText = boldText .. line:sub(i, i)
+                        i = i + 1
+                    end
+                    if boldText ~= "" then
+                        table.insert(segments, { text = boldText, font = Enum.Font.GothamBlack })
+                    end
+                    i = i + 2
+                elseif line:sub(i, i) == "*" then
+                    if current ~= "" then
+                        table.insert(segments, { text = current, font = Enum.Font.GothamBold })
+                        current = ""
+                    end
+                    i = i + 1
+                    local lightBoldText = ""
+                    while i <= #line and line:sub(i, i) ~= "*" do
+                        lightBoldText = lightBoldText .. line:sub(i, i)
+                        i = i + 1
+                    end
+                    if lightBoldText ~= "" then
+                        table.insert(segments, { text = lightBoldText, font = Enum.Font.Gotham })
+                    end
+                    i = i + 1
+                else
+                    current = current .. line:sub(i, i)
+                    i = i + 1
+                end
+            end
+            if current ~= "" then
+                table.insert(segments, { text = current, font = Enum.Font.GothamBold })
+            end
+
+            local xOffset = 5
+            local currentLineHeight = 0
+            local currentLineSegments = {}
+            local currentLineWidth = 0
+            for _, segment in ipairs(segments) do
+                local textSize = game:GetService("TextService"):GetTextSize(segment.text, 12.5, segment.font, Vector2.new(math.huge, math.huge))
+                if currentLineWidth + textSize.X > maxWidth then
+                    for _, seg in ipairs(currentLineSegments) do
+                        local _, height = createTextLabel(seg.text, 12.5, yOffset, seg.font, xOffset, maxWidth - xOffset + 5)
+                        currentLineHeight = math.max(currentLineHeight, height)
+                        xOffset = xOffset + textSize.X
+                    end
+                    yOffset = yOffset + currentLineHeight
+                    totalHeight = totalHeight + currentLineHeight
+                    xOffset = 5
+                    currentLineHeight = 0
+                    currentLineSegments = {}
+                    currentLineWidth = 0
+                end
+                table.insert(currentLineSegments, segment)
+                currentLineWidth = currentLineWidth + textSize.X
+            end
+            if #currentLineSegments > 0 then
+                for _, seg in ipairs(currentLineSegments) do
+                    local _, height, width = createTextLabel(seg.text, 12.5, yOffset, seg.font, xOffset, maxWidth - xOffset + 5)
+                    currentLineHeight = math.max(currentLineHeight, height)
+                    xOffset = xOffset + width
+                end
+                yOffset = yOffset + currentLineHeight
+                totalHeight = totalHeight + currentLineHeight
+            end
         end
     end
 
@@ -3084,7 +3227,7 @@ function createItemPanelSystem(parent, itemPanels, defaultPanelIndex)
                         local viewerElement = Fatality.ui.ModelViewer(item.Text, itemPanelFrame)
                         viewerElement.Position = UDim2.new(0.025, 0, 0, currentYOffset)
                     elseif item.Type == "TextList" then
-                        local textListElement = Fatality.ui.TextList(itemPanelFrame)
+                        local textListElement = Fatality.ui.TextList(itemPanelFrame, item.lang)
                         textListElement.Position = UDim2.new(0.025, 0, 0, currentYOffset)
                     end
                     yOffset = currentYOffset + 30
@@ -3397,7 +3540,8 @@ local CombatlItemPanels = {
                     { Type = "CheckBox", Text = "Logo Chat", Var = "LogoChat" },
                     { Type = "CheckBox", Text = "Fast Spin", Var = "FastSpin", bind = "FastSpinBind" },
                     { Type = "ComboBox", Text = "Taunt Spam", Var = "TauntSpam", Options = {"None", "Dance", "Point", "Laugh", "Cheer", "Custom"} },
-                    { Type = "TextEntry", Text = "Taunt Custom", Var = "TauntCustom" }
+                    { Type = "TextEntry", Text = "Taunt Custom", Var = "TauntCustom" },
+                    { Type = "CheckBox", Text = "Infinite Jump", Var = "InfiniteJump" },
                 }
             },
             {
@@ -3481,7 +3625,7 @@ local ConfiglItemPanels = {
                 Height = 486,
                 Pal = 1,
                 Items = {
-                    { Type = "TextList" }
+                    { Type = "TextList", lang = "ru" }
                 }
             },
             {
@@ -3489,7 +3633,7 @@ local ConfiglItemPanels = {
                 Height = 486,
                 Pal = 2,
                 Items = {
-
+                    { Type = "TextList", lang = "eng" }
                 }
             }
         }
@@ -4229,6 +4373,63 @@ Fatality.LocalPlayer.CharacterAdded:Connect(function()
     end
 end)
 
+
+
+local jumpConnection
+local lastJumpTime = 0
+local jumpCooldown = 0.2
+local isHoldingJump = false
+local function enableInfiniteJump()
+    if not Fatality.config.vars["InfiniteJump"] then
+        if jumpConnection then
+            jumpConnection:Disconnect()
+            jumpConnection = nil
+        end
+        return
+    end
+    if jumpConnection then return end
+    local character = Fatality.LocalPlayer.Character
+    if not character then return end
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if not humanoid then return end
+    jumpConnection = Fatality.UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if not gameProcessed and input.KeyCode == Enum.KeyCode.Space then
+            isHoldingJump = true
+            local currentTime = tick()
+            if currentTime - lastJumpTime < jumpCooldown then return end
+            lastJumpTime = currentTime
+            humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+    end)
+    Fatality.UserInputService.InputEnded:Connect(function(input, gameProcessed)
+        if not gameProcessed and input.KeyCode == Enum.KeyCode.Space then
+            isHoldingJump = false
+        end
+    end)
+    Fatality.RunService.Heartbeat:Connect(function()
+        if isHoldingJump then
+            local currentTime = tick()
+            if currentTime - lastJumpTime < jumpCooldown then return end
+            lastJumpTime = currentTime
+            humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+    end)
+end
+Fatality.LocalPlayer.CharacterAdded:Connect(function(character)
+    character:WaitForChild("Humanoid")
+    if jumpConnection then
+        jumpConnection:Disconnect()
+        jumpConnection = nil
+    end
+    isHoldingJump = false
+    enableInfiniteJump()
+end)
+if Fatality.LocalPlayer.Character then
+    enableInfiniteJump()
+end
+Fatality.RunService.Heartbeat:Connect(function()
+    enableInfiniteJump()
+end)
 --]]
 ---------------------------------------------------Aimbot
 local chamsCharacters = {}
