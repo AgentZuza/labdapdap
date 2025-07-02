@@ -58,6 +58,11 @@ Fatality.config.vars["GlowOutlineMax"] = 1
 Fatality.config.vars["SoundValume"] = 1
 
 ---------------------------------------------------UI
+local savedCameraType = Fatality.LocalCamera.CameraType
+local savedCameraMode = Fatality.Players.LocalPlayer.CameraMode
+local savedMouseBehavior = Fatality.UserInputService.MouseBehavior
+local savedMouseIconEnabled = Fatality.UserInputService.MouseIconEnabled
+
 local function StartupAnimation()
     local startupGui = Instance.new("ScreenGui")
     startupGui.Name = "FatalityStartupGui"
@@ -162,25 +167,29 @@ StartupAnimation()
 
 local function toggleMenu()
     Menuframe.Visible = not Menuframe.Visible
-    
+
     if Menuframe.Visible then
+        Fatality.UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+        Fatality.UserInputService.MouseIconEnabled = true
+
         if not security then
             Fatality.LocalCamera.CameraType = Enum.CameraType.Scriptable
-            Fatality.LocalCamera.CFrame = camera.CFrame 
         end
-        Fatality.UserInputService.MouseBehavior = Enum.MouseBehavior.Default 
-        Fatality.UserInputService.MouseIconEnabled = true
-    else 
-        if not security then
-            Fatality.LocalCamera.CameraType = Enum.CameraType.Custom
-            Fatality.UserInputService.MouseBehavior = Enum.MouseBehavior.Default 
+    else
+        Fatality.UserInputService.MouseIconEnabled = savedMouseIconEnabled ~= nil and savedMouseIconEnabled or true
+
+        if savedCameraMode == Enum.CameraMode.LockFirstPerson then
+            Fatality.UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
+        else
+            Fatality.UserInputService.MouseBehavior = savedMouseBehavior or Enum.MouseBehavior.Default
         end
-        if Fatality.config.vars["FreeCamera"] then
-            Fatality.UserInputService.MouseIconEnabled = false
+
+        if not security and savedCameraType then
+            Fatality.LocalCamera.CameraType = savedCameraType
         end
-        Fatality.UserInputService.MouseIconEnabled = true
     end
 end
+
 
 Fatality.RunService.RenderStepped:Connect(function()
     if Menuframe.Visible then
@@ -490,7 +499,7 @@ function Fatality.ui.ComboBox(name, varName, options, parent, moresave)
         if moresave then
             Fatality.config.vars[varName] = {}
         else
-            Fatality.config.vars[varName] = options[1]
+            Fatality.config.vars[varName] = options[1] or "-"
         end
     end
 
@@ -513,6 +522,7 @@ function Fatality.ui.ComboBox(name, varName, options, parent, moresave)
     gradient.Parent = blackSquare
 
     local function anpassText(text, maxWidth, filler)
+        text = tostring(text or "-")
         local textWidth = game:GetService("TextService"):GetTextSize(text, 13, Enum.Font.GothamBold, Vector2.new(math.huge, 15)).X
         if textWidth <= maxWidth then 
             return "  " .. text, false 
@@ -531,7 +541,7 @@ function Fatality.ui.ComboBox(name, varName, options, parent, moresave)
     local function updateDisplay()
         local displayText, isShortened
         if moresave then
-            local selectedOptions = Fatality.config.vars[varName]
+            local selectedOptions = Fatality.config.vars[varName] or {}
             if #selectedOptions == 0 then
                 displayText = "  -"
                 isShortened = false
@@ -540,7 +550,8 @@ function Fatality.ui.ComboBox(name, varName, options, parent, moresave)
                 displayText, isShortened = anpassText(displayText, dropdown.AbsoluteSize.X * 0.75, "...")
             end
         else
-            displayText, isShortened = anpassText(Fatality.config.vars[varName], dropdown.AbsoluteSize.X * 0.8, " ")
+            local varValue = Fatality.config.vars[varName]
+            displayText, isShortened = anpassText(tostring(varValue or "-"), dropdown.AbsoluteSize.X * 0.8, " ")
         end
 
         dropdown.Text = displayText
@@ -577,6 +588,9 @@ function Fatality.ui.ComboBox(name, varName, options, parent, moresave)
     layout.Parent = optionsFrame
 
     for _, opt in ipairs(options) do
+        if type(opt) ~= "string" then
+            continue
+        end
         local optButton = Instance.new("TextButton")
         optButton.Size = UDim2.new(1, 0, 2.25, 0)
         optButton.BackgroundTransparency = 0.5
@@ -4907,6 +4921,7 @@ local originalCameraType
 local originalCameraSubject
 local CameraTeleportActive = false
 local distance = 3
+local mouseBehaviorSet = false
 
 local function CameraTeleport()
     if not Fatality.LocalPlayer.Character or not Fatality.LocalPlayer.Character:FindFirstChild("Head") then
@@ -4959,6 +4974,17 @@ Fatality.LocalPlayer.CharacterAdded:Connect(function()
 end)
 
 Fatality.RunService.RenderStepped:Connect(function()
+    if Fatality.config.vars["FreeCamera"] and Menuframe.Visible == false then
+        if not mouseBehaviorSet then
+            Fatality.UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
+            mouseBehaviorSet = true
+        end
+    else
+        if mouseBehaviorSet then
+            mouseBehaviorSet = false
+        end
+    end
+
     if Fatality.config.vars["CameraTeleport"] then
         if not CameraTeleportActive then
             originalCameraType = camera.CameraType
