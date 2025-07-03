@@ -3435,7 +3435,7 @@ local aimbotItemPanels = {
                     --{ Type = "CheckBox", Text = "Auto fire", Var = "AutoFire" },
                     { Type = "Slider", Text = "FOV", Var = "FOVValue", Min = 0, Max = 360, Dec = 0 },
                     { Type = "ComboBox", Text = "Target priority", Var = "TargetPriority", Options = {"Distance", "FOV"} },
-                    { Type = "CheckBox", Text = "Model Aimbot", Var = "ModelAimbot" },
+                    --{ Type = "CheckBox", Text = "Model Aimbot", Var = "ModelAimbot" },
                     { Type = "ComboBox", Text = "Ignores", Var = "IgnoresAimbot", Options = {"Walls", "Teammates", "God time", "Friends Roblox"}, moresave = true },
                     { Type = "ComboBox", Text = "Blox Strike", Var = "BloxStrikeAimbot", Options = {"NoRecoil", "MoreAmmo", "DoubleTap"}, moresave = true },
                     { Type = "ComboBox", Text = "Hit Sound", Var = "HitSound", Options = {"None", "Metalic", "Fatality", "Exp", "Rust", "Bell"} },
