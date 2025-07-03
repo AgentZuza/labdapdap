@@ -70,7 +70,7 @@ local function StartupAnimation()
     startupGui.IgnoreGuiInset = true
     startupGui.ResetOnSpawn = false
     startupGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
-    startupGui.Parent = game:GetService("CoreGui")
+    startupGui.Parent = Fatality.gui
 
     local gradientSquare = Instance.new("Frame")
     gradientSquare.Size = UDim2.new(0, 150, 0, 150)
@@ -3432,7 +3432,7 @@ local aimbotItemPanels = {
                 Pal = 1,
                 Items = {
                     { Type = "CheckBox", Text = "Enable Aimbot", Var = "enableAimbot", bind = "enableAimbotBind" },
-                    --{ Type = "CheckBox", Text = "Auto fire", Var = "AutoFire" },
+                    { Type = "CheckBox", Text = "Auto fire", Var = "AutoFire" },
                     { Type = "Slider", Text = "FOV", Var = "FOVValue", Min = 0, Max = 360, Dec = 0 },
                     { Type = "ComboBox", Text = "Target priority", Var = "TargetPriority", Options = {"Distance", "FOV"} },
                     --{ Type = "CheckBox", Text = "Model Aimbot", Var = "ModelAimbot" },
@@ -5293,8 +5293,8 @@ local function UpdateESP()
                         lastHealth[player] = humanoid.Health
                     end
                 end
-                if Fatality.config.vars["AutoFire"] then
-                    AutoFire()
+                if Fatality.config.vars["AutoFire"] and Menuframe.Visible == false then
+                    mouse1click()
                 end
             else
                 lastCameraCFrame = nil
