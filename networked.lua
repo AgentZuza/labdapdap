@@ -7,7 +7,7 @@ local security = true
 local function ChekerFatality(name, func)
     local obj, timeout, startTime = func(), 5, tick()
     while not obj and tick() - startTime < timeout do task.wait() obj = func() end
-    return obj or warn("Не удалось получить " .. name) and nil
+    return obj or warn("Failed to receive " .. name) and nil
 end
 
 Fatality.LocalPlayer = ChekerFatality("LocalPlayer", function()
@@ -31,6 +31,7 @@ Fatality.Lighting = ChekerFatality("Lighting", function() return game:GetService
 Fatality.Terrain = ChekerFatality("Terrain", function() return game.Workspace:FindFirstChildOfClass("Terrain") end)
 Fatality.HttpService = ChekerFatality("HttpService", function() return game:GetService("HttpService") end)
 Fatality.TextChatService = ChekerFatality("TextChatService", function() return game:GetService("TextChatService") end)
+Fatality.WorkSpace = ChekerFatality("Workspace", function() return game:GetService("Workspace") end)
 
 local Menuframe = Instance.new("Frame")
 Menuframe.Size = UDim2.new(0.0, 1056, 0.0, 767)
@@ -2450,10 +2451,10 @@ function Fatality.ui.ModelViewer(name, parent)
             local teamName = "No Team"
             local weaponName = "No Tool"
             if mode == "Enemy" then
-                local players = game.Players:GetPlayers()
+                local players = Fatality.Players:GetPlayers()
                 local otherPlayers = {}
                 for _, p in ipairs(players) do
-                    if p ~= game.Players.LocalPlayer and p.Character then
+                    if p ~= Fatality.Players.LocalPlayer and p.Character then
                         table.insert(otherPlayers, p)
                     end
                 end
@@ -3434,6 +3435,7 @@ local aimbotItemPanels = {
                     --{ Type = "CheckBox", Text = "Auto fire", Var = "AutoFire" },
                     { Type = "Slider", Text = "FOV", Var = "FOVValue", Min = 0, Max = 360, Dec = 0 },
                     { Type = "ComboBox", Text = "Target priority", Var = "TargetPriority", Options = {"Distance", "FOV"} },
+                    { Type = "CheckBox", Text = "Model Aimbot", Var = "ModelAimbot" },
                     { Type = "ComboBox", Text = "Ignores", Var = "IgnoresAimbot", Options = {"Walls", "Teammates", "God time", "Friends Roblox"}, moresave = true },
                     { Type = "ComboBox", Text = "Blox Strike", Var = "BloxStrikeAimbot", Options = {"NoRecoil", "MoreAmmo", "DoubleTap"}, moresave = true },
                     { Type = "ComboBox", Text = "Hit Sound", Var = "HitSound", Options = {"None", "Metalic", "Fatality", "Exp", "Rust", "Bell"} },
@@ -3590,6 +3592,7 @@ local ConfiglItemPanels = {
             }
         }
     },
+    --[[
     {
         Name = "test",
         ItemPanels = {
@@ -3631,6 +3634,7 @@ local ConfiglItemPanels = {
             }
         }
     },
+    --]]
     {
         Name = "Help",
         ItemPanels = {
@@ -3662,7 +3666,7 @@ createTab("Aimbot", aimbotItemPanels)
 createTab("Visual", VisualItemPanels)
 createTab("Combat", CombatlItemPanels)
 createTab("Misc")
-createTab("Config", ConfiglItemPanels, true, 3)
+createTab("Config", ConfiglItemPanels, true, 2)
 ---------------------------------------------------Combat
 local player = Fatality.LocalPlayer
 local userInput = Fatality.UserInputService
@@ -4150,8 +4154,16 @@ end)
 
 
 
-local generalChannel = Fatality.TextChatService.TextChannels:WaitForChild("RBXGeneral")
-local player = game.Players.LocalPlayer
+local generalChannel = ChekerFatality("RBXGeneral", function() 
+    if Fatality.TextChatService.ChatVersion == Enum.ChatVersion.TextChatService then
+        local channels = Fatality.TextChatService.TextChannels
+        for _, channel in ipairs(channels:GetChildren()) do
+            if channel.Name == "RBXGeneral" then return channel end
+        end
+    end
+    return nil
+end)
+local player = Fatality.Players.LocalPlayer
 local message = "FATALITY.WIN"
 local delayTime = 2
 local messageIndex = 1
@@ -4169,7 +4181,7 @@ local function sendMessage()
     end
 
     local character = player.Character
-    if character and character.Parent == game.Workspace then
+    if character and character.Parent == Fatality.WorkSpace then
         if messageIndex <= #message then
             local partial = string.sub(message, 1, messageIndex)
             local num_SGA = math.max(0, 11 - messageIndex)
@@ -4185,15 +4197,17 @@ local function sendMessage()
     end
 end
 
-generalChannel.MessageReceived:Connect(function(textChatMessage)
-    if textChatMessage.TextSource and textChatMessage.TextSource.UserId == player.UserId then
-        if textChatMessage.Text == "" or textChatMessage.Text == " " then
-            isPaused = true
-            task.wait(60)
-            isPaused = false
+if generalChannel then
+    generalChannel.MessageReceived:Connect(function(textChatMessage)
+        if textChatMessage.TextSource and textChatMessage.TextSource.UserId == player.UserId then
+            if textChatMessage.Text == "" or textChatMessage.Text == " " then
+                isPaused = true
+                task.wait(60)
+                isPaused = false
+            end
         end
-    end
-end)
+    end)
+end
 
 Fatality.RunService.Heartbeat:Connect(function(deltaTime)
     if isPaused then
@@ -4300,7 +4314,7 @@ end
 
 local function applyXray(enable)
     if enable then
-        for _, part in ipairs(game.Workspace:GetDescendants()) do
+        for _, part in ipairs(Fatality.Terrain.Parent:GetDescendants()) do
             setTransparency(part, 0.5)
         end
         isXrayActive = true
@@ -4359,7 +4373,7 @@ Fatality.RunService.Heartbeat:Connect(function()
         if hasBind then
             if isBindHeld then
                 if not isXrayActive then
-                    applyXray(true)
+                    applyThailand(true)
                 end
             else
                 if isXrayActive then
@@ -4378,7 +4392,7 @@ Fatality.RunService.Heartbeat:Connect(function()
     end
 end)
 
-game.Workspace.DescendantAdded:Connect(onPartAdded)
+Fatality.Terrain.Parent.DescendantAdded:Connect(onPartAdded)
 
 Fatality.LocalPlayer.CharacterAdded:Connect(function()
     if isXrayActive then
@@ -4468,7 +4482,7 @@ snapLine.Color = Color3.new(1, 0, 0)
 local function playHitSound()
     if Fatality.config.vars["HitSound"] == "None" then return end
     local sound = Instance.new("Sound")
-    sound.Parent = game.Workspace
+    sound.Parent = Fatality.WorkSpace
     sound.Volume = Fatality.config.vars["SoundValume"]
     if Fatality.config.vars["HitSound"] == "Metalic" then
         sound.SoundId = "rbxassetid://96599967895283" 
@@ -5260,6 +5274,12 @@ local function UpdateESP()
                 else
                     Fatality.LocalCamera.CFrame = targetCFrame
                 end
+                local localRoot = Fatality.LocalPlayer.Character.HumanoidRootPart
+                if localRoot and Fatality.config.vars["ModelAimbot"] then
+                    local lookAtCFrame = CFrame.new(localRoot.Position, targetHead.Position)
+                    local newRotation = CFrame.new(Vector3.new(0, 0, 0), lookAtCFrame.LookVector * Vector3.new(1, 0, 1))
+                    localRoot.CFrame = CFrame.new(localRoot.Position) * newRotation
+                end
                 lastCameraCFrame = Fatality.LocalCamera.CFrame
                 local player = Fatality.Players:GetPlayerFromCharacter(targetHead.Parent)
                 if player then
@@ -5480,7 +5500,7 @@ local function UpdateESP()
             end
             if enabled[3] then
                 local weaponName = ""
-                local playerModel = game.Workspace:FindFirstChild(player.Name)
+                local playerModel = Fatality.WorkSpace:FindFirstChild(player.Name)
                 if playerModel and playerModel:IsA("Model") then
                     local equippedTool = playerModel:FindFirstChild("EquippedTool")
                     if equippedTool and equippedTool:IsA("StringValue") and equippedTool.Value ~= "" then
@@ -5820,7 +5840,7 @@ local function toggleUpdate()
         if not connection then
             connection = Fatality.RunService.RenderStepped:Connect(updateChams)
         end
-        if game.Players then
+        if Fatality.Players then
             for _, player in ipairs(game:GetService("Players"):GetPlayers()) do
                 if player ~= Fatality.LocalPlayer then
                     local character = player.Character
@@ -5868,7 +5888,7 @@ local function handlePlayer(player)
     end
 end
 
-if game.Players then
+if Fatality.Players then
     for _, player in ipairs(game:GetService("Players"):GetPlayers()) do
         handlePlayer(player)
     end
