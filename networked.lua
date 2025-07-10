@@ -40,6 +40,8 @@ Menuframe.BackgroundColor3 = Color3.fromRGB(16, 14, 34)
 Menuframe.Parent = Fatality.gui
 Menuframe.Visible = false 
 ---------------------------------------------------Config
+Fatality.config.vars["Entity"] = {}
+
 Fatality.config.vars["FOVValue"] = 50
 Fatality.config.vars["TargetPriority"] = "FOV"
 Fatality.config.colors["HealthPlayerCol"] = Color3.new(0, 1, 0)
@@ -57,12 +59,15 @@ Fatality.config.vars["ESPUpdateInterval"] = 35
 Fatality.config.vars["TargetSelection"] = 1
 Fatality.config.vars["GlowOutlineMax"] = 1
 Fatality.config.vars["SoundValume"] = 1
+Fatality.config.vars["EntityUpdateInterval"] = 35
+Fatality.config.vars["DistanceEntity"] = 1000
 
 ---------------------------------------------------UI
 local savedCameraType = Fatality.LocalCamera.CameraType
 local savedCameraMode = Fatality.Players.LocalPlayer.CameraMode
 local savedMouseBehavior = Fatality.UserInputService.MouseBehavior
 local savedMouseIconEnabled = Fatality.UserInputService.MouseIconEnabled
+local validEntities = {}
 
 local function StartupAnimation()
     local startupGui = Instance.new("ScreenGui")
@@ -1877,6 +1882,11 @@ function Fatality.ui.ConfigManager(parent)
                         updateTextEntry()
                     end
                 end
+                if Fatality.ui.AllEntityLists then
+                    for _, updateDisplay in ipairs(Fatality.ui.AllEntityLists) do
+                        updateDisplay()
+                    end
+                end
             else
                 warn("Конфиг не найден!")
             end
@@ -2826,75 +2836,89 @@ function Fatality.ui.TextList(parent, lang)
             "     Distance для Itachi определяет самого дальнего игрока и телепортирует к нему\n" ..
             "     Team Teleport игнорирует союзников в Itachi\n" ..
             "     Camera Teleport телепортирует камеру к противнику\n" ..
-            "     Camera Teleport Team игнорирует тимейтов"
+            "     Camera Teleport Team игнорирует тимейтов\n\n" ..
+
+            "**4. Вкладка Misc:**\n" ..
+            "  *- EntityList:*\n" ..
+            "     Показывает все возможные обьекты,которые хотя бы раз появлялись в мире\n" ..
+            "     Update обновляет список, автоматически не обновляется\n" ..
+            "     Esp и прочее можно включить в соотвественной вкладк\n" ..
+            "     Filter вписываете в него что вы ищете и нажимаете enter\n" 
         )
     elseif lang == "eng" then
         help_text = (
             "Instructions for Fatality Functions\n\n" ..
             "General Concepts:\n" ..
-            "The cheat menu is opened and closed with the DEL key\n" ..
+            "The cheat menu is toggled with the DEL key\n" ..
             "Binds can be reset by right-clicking (RMB)\n" ..
-            "Wherever there is a Bind, the corresponding function must be enabled for it to work, with some exceptions\n" ..
-            "TextEntry — text input field, to apply the text, enter it and press Enter\n\n" ..
+            "For features with a Bind, ensure the corresponding function is enabled for it to work, unless otherwise specified\n" ..
+            "TextEntry — text input field; enter text and press Enter to apply\n\n" ..
 
             "**1. Aimbot Tab:**\n" ..
             "  *- Target Priority:*\n" ..
-            "     FOV targets the enemy closest to the center of the screen within a set radius\n" ..
+            "     FOV targets the enemy closest to the screen's center within a set radius\n" ..
             "     Distance selects the closest player to the local player\n\n" ..
             "  *- Ignores:*\n" ..
-            "     Walls ignores walls, by default checks for enemy head visibility\n" ..
+            "     Walls ignores walls; by default, checks enemy head visibility\n" ..
             "     Teammates ignores teammates\n" ..
-            "     God time ignores players with a spawn shield\n" ..
-            "     Friends Roblox ignores players who are Roblox friends\n\n" ..
+            "     God Time ignores players with a spawn shield\n" ..
+            "     Roblox Friends ignores players on your Roblox friends list\n\n" ..
             "  *- Blox Strike:*\n" ..
-            "     The following only works in *Blox Strike*\n" ..        
-            "     NoRecoil removes all recoil\n" ..
-            "     MoreAmmo gives extra ammo when purchasing weapons\n" ..
-            "     DoubleTap enables double shots, works when purchasing weapons, lowers *FPS*\n\n" ..
+            "     The following features work ONLY in Blox Strike\n" ..        
+            "     NoRecoil eliminates all weapon recoil\n" ..
+            "     MoreAmmo grants extra ammunition when purchasing weapons\n" ..
+            "     DoubleTap enables double shots when purchasing weapons (may reduce FPS)\n\n" ..
             "  *- Hit Sound:*\n" ..
-            "     Plays or does not play a sound when dealing damage\n" ..
-            "     Sound only kill sound plays only when you kill a player, not when dealing damage\n\n" ..
+            "     Plays or disables a sound when dealing damage\n" ..
+            "     Sound Only Kill plays sound only on kills, not when dealing damage\n\n" ..
             "  *- Show FOV:*\n" ..
-            "     Shows FOV if enabled, does not show the Fatality menu\n\n" ..
+            "     Displays the FOV circle when enabled; the Fatality menu is hidden\n\n" ..
 
             "**2. Visual Tab:**\n" ..
             "  *- ESP:*\n" ..
-            "     Update ESP sets the ESP refresh rate in ms, higher values mean less frequent updates and higher *FPS*\n\n" ..
+            "     Update ESP sets the refresh rate in milliseconds; higher values reduce updates, improving FPS\n\n" ..
             "  *- View:*\n" ..
-            "     Free Camera for proper operation, use a bind and exit the menu\n\n" ..
+            "     Free Camera: for proper functionality, use a bind and exit the menu\n\n" ..
             "  *- Third Person:*\n" ..
-            "     Third person mode, do not enable if third person is already available, use with bind\n\n" ..
+            "     Enables third-person mode; do not use if third-person is already available; use with bind\n\n" ..
             "  *- FullBright:*\n" ..
             "     Disables shadows and lighting, making everything white\n\n" ..
             "  *- Xray:*\n" ..
             "     Makes all objects transparent\n\n" ..
             "  *- Chams:*\n" ..
             "     AlwaysOnTop enables visibility through walls\n" ..
-            "     Pulsating sets the minimum pulsation value, maximum determined by the alpha channel in *Color*\n" ..
-            "     Glow Outline Min minimum possible alpha channel for Glow\n" ..
-            "     Glow Outline Max maximum possible alpha channel for Glow\n\n" ..
+            "     Pulsating sets the minimum pulsation value; maximum is determined by the alpha channel in Color\n" ..
+            "     Glow Outline Min sets the minimum alpha channel for Glow\n" ..
+            "     Glow Outline Max sets the maximum alpha channel for Glow\n\n" ..
 
             "**3. Combat Tab:**\n" ..
             "  *- LocalPlayer:*\n" ..
-            "     Speed Setting Velocity changes player speed via parameters\n" ..
-            "     Speed Setting CFrame changes player coordinates, may cause falling through the map\n\n" ..
+            "     Speed Setting Velocity modifies player speed via parameters\n" ..
+            "     Speed Setting CFrame changes player coordinates; may cause falling through the map\n\n" ..
             "  *- Noclip:*\n" ..
             "     Enables flight\n\n" ..
             "  *- NoCollision:*\n" ..
             "     Disables collision for the local player\n\n" ..
             "  *- Logo Chat:*\n" ..
-            "     Writes Fatality.win in chat\n\n" ..
+            "     Writes 'Fatality.win' in chat\n\n" ..
             "  *- Taunt Spam:*\n" ..
             "     Plays animations on the local player\n" ..
             "     Does not work with all models\n" ..
-            "     TauntCustom used for custom animations, example (rbxassetid://507771955)\n\n" ..
+            "     TauntCustom is used for custom animations, e.g., (rbxassetid://507771955)\n\n" ..
             "  *- Blox:*\n" ..
-            "     HackWeapons works only in Blox Strike, turns weapons into machine guns\n" ..
+            "     HackWeapons works only in Blox Strike; turns weapons into machine guns\n" ..
             "     Itachi Mod teleports the player around the target when selecting Distance or inside the target when selecting In The Player\n" ..
             "     Distance for Itachi targets the farthest player and teleports to them\n" ..
             "     Team Teleport ignores teammates in Itachi\n" ..
             "     Camera Teleport teleports the camera to the enemy\n" ..
-            "     Camera Teleport Team ignores teammates"
+            "     Camera Teleport Team ignores teammates\n\n" ..
+
+            "**4. Misc Tab:**\n" ..
+            "  *- EntityList:*\n" ..
+            "     Displays all objects that have appeared in the world at least once\n" ..
+            "     Update refreshes the list; it does not update automatically\n" ..
+            "     ESP and other features can be enabled in the corresponding tab\n" ..
+            "     Filter: enter what you are searching for and press Enter\n"
         )
     end
 
@@ -3031,6 +3055,406 @@ function Fatality.ui.TextList(parent, lang)
     end
 
     scrollFrame.CanvasSize = UDim2.new(0, 0, 0, math.max(totalHeight, 460))
+
+    return scrollFrame
+end
+
+function Fatality.ui.EntityList(parent)
+    local backgroundFrame = Instance.new("Frame")
+    backgroundFrame.Size = UDim2.new(0, 304, 0, 453)
+    backgroundFrame.Position = UDim2.new(0.025, 0, 0.035, 8)
+    backgroundFrame.BackgroundTransparency = 0
+    backgroundFrame.BackgroundColor3 = Color3.fromRGB(29, 23, 60)
+    backgroundFrame.BorderSizePixel = 0
+    backgroundFrame.ZIndex = 109
+    backgroundFrame.Parent = parent
+
+    local headerFrame = Instance.new("Frame")
+    headerFrame.Size = UDim2.new(0, 304, 0, 20)
+    headerFrame.Position = UDim2.new(0.025, 5, 0, 5)
+    headerFrame.BackgroundTransparency = 1
+    headerFrame.ZIndex = 110
+    headerFrame.Parent = parent
+
+    local nameHeader = Instance.new("TextLabel")
+    nameHeader.Size = UDim2.new(0.6, -10, 1, 0)
+    nameHeader.Position = UDim2.new(0, 5, 0, 0)
+    nameHeader.BackgroundTransparency = 1
+    nameHeader.Text = "Name | Count"
+    nameHeader.TextColor3 = Color3.fromRGB(220, 220, 220)
+    nameHeader.Font = Enum.Font.GothamBold
+    nameHeader.TextSize = 12
+    nameHeader.TextXAlignment = Enum.TextXAlignment.Left
+    nameHeader.ZIndex = 111
+    nameHeader.Parent = headerFrame
+
+    local classHeader = Instance.new("TextLabel")
+    classHeader.Size = UDim2.new(0.4, -10, 1, 0)
+    classHeader.Position = UDim2.new(0.6, 65, 0, 0)
+    classHeader.BackgroundTransparency = 1
+    classHeader.Text = "Class"
+    classHeader.TextColor3 = Color3.fromRGB(220, 220, 220)
+    classHeader.Font = Enum.Font.GothamBold
+    classHeader.TextSize = 12
+    classHeader.TextXAlignment = Enum.TextXAlignment.Left
+    classHeader.ZIndex = 111
+    classHeader.Parent = headerFrame
+
+    local scrollFrame = Instance.new("ScrollingFrame")
+    scrollFrame.Size = UDim2.new(0, 304, 0, 425)
+    scrollFrame.Position = UDim2.new(0.025, 5, 0.045, 0)
+    scrollFrame.BackgroundTransparency = 1
+    scrollFrame.BorderSizePixel = 0
+    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+    scrollFrame.ScrollBarThickness = 0
+    scrollFrame.ZIndex = 110
+    scrollFrame.AnchorPoint = Vector2.new(0, 0)
+    scrollFrame.Parent = parent
+
+    local listLayout = Instance.new("UIListLayout")
+    listLayout.Padding = UDim.new(0, 6)
+    listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    listLayout.Parent = scrollFrame
+
+    local padding = Instance.new("UIPadding")
+    padding.PaddingLeft = UDim.new(0, 5)
+    padding.PaddingTop = UDim.new(0, 5)
+    padding.PaddingBottom = UDim.new(0, 5)
+    padding.Parent = scrollFrame
+
+    local updateButton = Instance.new("TextButton")
+    updateButton.Size = UDim2.new(0, 100, 0, 20)
+    updateButton.Position = UDim2.new(0.025, 5, 0.99, -25)
+    updateButton.BackgroundColor3 = Color3.fromRGB(195, 44, 95)
+    updateButton.Text = "Update"
+    updateButton.TextColor3 = Color3.fromRGB(220, 220, 220)
+    updateButton.Font = Enum.Font.GothamBold
+    updateButton.TextSize = 12
+    updateButton.ZIndex = 111
+    updateButton.Parent = parent
+
+    local filterBox = Instance.new("TextBox")
+    filterBox.Size = UDim2.new(0, 184, 0, 20)
+    filterBox.Position = UDim2.new(0.025, 115, 0.99, -25)
+    filterBox.BackgroundColor3 = Color3.fromRGB(29, 23, 60)
+    filterBox.Text = ""
+    filterBox.PlaceholderText = "Filter..."
+    filterBox.PlaceholderColor3 = Color3.fromRGB(100, 100, 100)
+    filterBox.TextColor3 = Color3.fromRGB(220, 220, 220)
+    filterBox.Font = Enum.Font.GothamBold
+    filterBox.TextSize = 12
+    filterBox.TextXAlignment = Enum.TextXAlignment.Left
+    filterBox.ClearTextOnFocus = false
+    filterBox.TextTruncate = Enum.TextTruncate.AtEnd
+    filterBox.ClipsDescendants = true
+    filterBox.ZIndex = 111
+    filterBox.Parent = parent
+
+    local filterPadding = Instance.new("UIPadding")
+    filterPadding.PaddingLeft = UDim.new(0, 8)
+    filterPadding.Parent = filterBox
+
+    local debugLabel = Instance.new("TextLabel")
+    debugLabel.Size = UDim2.new(0.5, -10, 1, 0)
+    debugLabel.Position = UDim2.new(0.0, 115, 0, 0)
+    debugLabel.BackgroundTransparency = 1
+    debugLabel.Text = "None"
+    debugLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
+    debugLabel.Font = Enum.Font.GothamBold
+    debugLabel.TextSize = 12
+    debugLabel.TextXAlignment = Enum.TextXAlignment.Left
+    debugLabel.ZIndex = 111
+    debugLabel.Parent = headerFrame
+
+    local entities = {}
+    local selectedEntries = {}
+    local entityCounts = {}
+    local allKnownEntities = {}
+    local isUpdating = false
+    local currentFilter = ""
+
+    local function updateCanvasSize()
+        local paddingTop = padding.PaddingTop.Offset
+        local paddingBottom = padding.PaddingBottom.Offset - 4
+        scrollFrame.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y + paddingTop + paddingBottom)
+    end
+
+    local function isEntitySelected(name, className)
+        for _, entry in ipairs(Fatality.config.vars["Entity"]) do
+            if entry.name == name and entry.className == className then
+                return true
+            end
+        end
+        return false
+    end
+
+    local function getEntityKey(entity)
+        return (entity.Name or tostring(entity)) .. "|" .. (entity.ClassName or "Unknown")
+    end
+
+    local function createEntityEntry(name, className, count)
+        local key = name .. "|" .. className
+        if entities[key] then return end
+
+        local entryFrame = Instance.new("Frame")
+        entryFrame.Size = UDim2.new(1, -5, 0, 30)
+        entryFrame.BackgroundTransparency = 0
+        entryFrame.BackgroundColor3 = isEntitySelected(name, className) and Color3.fromRGB(195, 44, 95) or Color3.fromRGB(29, 23, 60)
+        entryFrame.ZIndex = 111
+        entryFrame.Parent = scrollFrame
+
+        local nameLabel = Instance.new("TextLabel")
+        nameLabel.Size = UDim2.new(0.6, -10, 1, 0)
+        nameLabel.Position = UDim2.new(0, 5, 0, 0)
+        nameLabel.BackgroundTransparency = 1
+        nameLabel.Text = name .. " | " .. count
+        nameLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
+        nameLabel.Font = Enum.Font.GothamBold
+        nameLabel.TextSize = 12
+        nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+        nameLabel.ZIndex = 112
+        nameLabel.Parent = entryFrame
+
+        local classLabel = Instance.new("TextLabel")
+        classLabel.Size = UDim2.new(0.4, -10, 1, 0)
+        classLabel.Position = UDim2.new(0.6, -5, 0, 0)
+        classLabel.BackgroundTransparency = 1
+        classLabel.Text = className
+        classLabel.TextColor3 = isEntitySelected(name, className) and Color3.fromRGB(125, 26, 45) or Color3.fromRGB(195, 44, 95)
+        classLabel.Font = Enum.Font.GothamBold
+        classLabel.TextSize = 12
+        classLabel.TextXAlignment = Enum.TextXAlignment.Right
+        classLabel.ZIndex = 112
+        classLabel.Name = "ClassLabel"
+        classLabel.Parent = entryFrame
+
+        local button = Instance.new("TextButton")
+        button.Size = UDim2.new(1, 0, 1, 0)
+        button.BackgroundTransparency = 1
+        button.Text = ""
+        button.ZIndex = 113
+        button.Parent = entryFrame
+
+        local isProcessingClick = false
+        button.MouseButton1Click:Connect(function()
+            if isProcessingClick or isUpdating then return end
+            isProcessingClick = true
+            task.spawn(function()
+                local targetName = name
+                local targetClass = className
+                local isSelected = isEntitySelected(targetName, targetClass)
+
+                if not isSelected then
+                    local objects = Fatality.WorkSpace:GetDescendants()
+                    for _, obj in ipairs(objects) do
+                        if (obj:IsA("Model") or obj:IsA("BasePart") or obj:IsA("MeshPart") or obj:IsA("Part") or obj:IsA("Seat")) and obj.Name == targetName and obj.ClassName == targetClass and not isEntitySelected(obj.Name, obj.ClassName) then
+                            table.insert(Fatality.config.vars["Entity"], {name = obj.Name, className = obj.ClassName})
+                        end
+                    end
+                    for otherKey, otherEntry in pairs(entities) do
+                        local otherName, otherClass = otherKey:match("^(.-)|(.+)$")
+                        if otherName == targetName and otherClass == targetClass then
+                            selectedEntries[otherKey] = true
+                            otherEntry.BackgroundColor3 = Color3.fromRGB(195, 44, 95)
+                            local classLabel = otherEntry:FindFirstChild("ClassLabel")
+                            if classLabel then
+                                classLabel.TextColor3 = Color3.fromRGB(125, 26, 45)
+                            end
+                        end
+                    end
+                else
+                    for i = #Fatality.config.vars["Entity"], 1, -1 do
+                        local entry = Fatality.config.vars["Entity"][i]
+                        if entry.name == targetName and entry.className == targetClass then
+                            table.remove(Fatality.config.vars["Entity"], i)
+                        end
+                    end
+                    for otherKey, otherEntry in pairs(entities) do
+                        local otherName, otherClass = otherKey:match("^(.-)|(.+)$")
+                        if otherName == targetName and otherClass == targetClass then
+                            selectedEntries[otherKey] = nil
+                            otherEntry.BackgroundColor3 = Color3.fromRGB(29, 23, 60)
+                            local classLabel = otherEntry:FindFirstChild("ClassLabel")
+                            if classLabel then
+                                classLabel.TextColor3 = Color3.fromRGB(195, 44, 95)
+                            end
+                        end
+                    end
+                end
+                updateCanvasSize()
+                isProcessingClick = false
+            end)
+        end)
+
+        entities[key] = entryFrame
+    end
+
+    local function removeEntityEntry(key)
+        if entities[key] then
+            entities[key]:Destroy()
+            entities[key] = nil
+        end
+    end
+
+    local function applyFilter()
+        local filterText = currentFilter:lower()
+        for key, entry in pairs(entities) do
+            local name, class = key:match("^(.-)|(.+)$")
+            local nameLower = name:lower()
+            local classLower = class:lower()
+            local matches = filterText == "" or nameLower:find(filterText) or classLower:find(filterText)
+            entry.Visible = matches
+        end
+        updateCanvasSize()
+    end
+
+    local function updateEntities()
+        if isUpdating then return end
+        isUpdating = true
+        debugLabel.Text = "Processing..."
+        for key, _ in pairs(entities) do
+            removeEntityEntry(key)
+        end
+        entities = {}
+        selectedEntries = {}
+
+        local currentEntityCounts = {}
+        local objects = Fatality.WorkSpace:GetDescendants()
+        local chunkSize = 500
+        local index = 1
+        local totalObjects = #objects
+        local foundObjects = 0
+
+        local function processChunk()
+            local endIndex = math.min(index + chunkSize - 1, totalObjects)
+            for i = index, endIndex do
+                local entity = objects[i]
+                if (entity:IsA("Model") or entity:IsA("BasePart") or entity:IsA("MeshPart") or entity:IsA("Part") or entity:IsA("Seat")) and not entity:IsA("Terrain") then
+                    if entity:IsA("Model") then
+                        local hasValidPart = false
+                        for _, descendant in ipairs(entity:GetDescendants()) do
+                            if descendant:IsA("BasePart") or descendant:IsA("MeshPart") or descendant:IsA("Part") or descendant:IsA("Seat") then
+                                hasValidPart = true
+                                break
+                            end
+                        end
+                        if hasValidPart then
+                            local key = getEntityKey(entity)
+                            currentEntityCounts[key] = (currentEntityCounts[key] or 0) + 1
+                            allKnownEntities[key] = true
+                            foundObjects = foundObjects + 1
+                        end
+                    elseif not entity.Parent:IsA("Model") then
+                        local key = getEntityKey(entity)
+                        currentEntityCounts[key] = (currentEntityCounts[key] or 0) + 1
+                        allKnownEntities[key] = true
+                        foundObjects = foundObjects + 1
+                    end
+                end
+            end
+            index = endIndex + 1
+
+            if index > totalObjects then
+                local entityList = {}
+                for key, _ in pairs(allKnownEntities) do
+                    local name, className = key:match("^(.-)|(.+)$")
+                    table.insert(entityList, {name = name, className = className, count = currentEntityCounts[key] or 0})
+                end
+
+                table.sort(entityList, function(a, b)
+                    local classA = a.className:lower()
+                    local classB = b.className:lower()
+                    if classA == classB then
+                        return a.name:lower() < b.name:lower()
+                    end
+                    return classA < classB
+                end)
+
+                for _, entity in ipairs(entityList) do
+                    createEntityEntry(entity.name, entity.className, entity.count)
+                end
+
+                applyFilter()
+                isUpdating = false
+                debugLabel.Text = "Done: " .. foundObjects .. " obj"
+            else
+                task.spawn(processChunk)
+            end
+        end
+
+        if totalObjects > 0 then
+            task.spawn(processChunk)
+        else
+            local entityList = {}
+            for key, _ in pairs(allKnownEntities) do
+                local name, className = key:match("^(.-)|(.+)$")
+                table.insert(entityList, {name = name, className = className, count = 0})
+            end
+
+            table.sort(entityList, function(a, b)
+                local classA = className:lower()
+                local classB = b.className:lower()
+                if classA == classB then
+                    return a.name:lower() < b.name:lower()
+                end
+                return classA < classB
+            end)
+
+            for _, entity in ipairs(entityList) do
+                createEntityEntry(entity.name, entity.className, entity.count)
+            end
+
+            applyFilter()
+            isUpdating = false
+            debugLabel.Text = "No entities found"
+        end
+    end
+
+    local function updateDisplay()
+        task.spawn(function()
+            for key, entry in pairs(entities) do
+                local name, className = key:match("^(.-)|(.+)$")
+                local isSelected = isEntitySelected(name, className)
+                selectedEntries[key] = isSelected
+                entry.BackgroundColor3 = isSelected and Color3.fromRGB(195, 44, 95) or Color3.fromRGB(29, 23, 60)
+                local classLabel = entry:FindFirstChild("ClassLabel")
+                if classLabel then
+                    classLabel.TextColor3 = isSelected and Color3.fromRGB(125, 26, 45) or Color3.fromRGB(195, 44, 95)
+                end
+            end
+        end)
+    end
+
+    updateButton.MouseButton1Click:Connect(function()
+        updateEntities()
+    end)
+
+    local isFocused = false
+    filterBox.Focused:Connect(function()
+        isFocused = true
+        filterBox.TextTruncate = Enum.TextTruncate.None
+        filterBox.CursorPosition = #filterBox.Text + 1
+    end)
+
+    filterBox.FocusLost:Connect(function(enterPressed)
+        isFocused = false
+        filterBox.TextTruncate = Enum.TextTruncate.AtEnd
+        if enterPressed then
+            currentFilter = filterBox.Text
+            applyFilter()
+        end
+    end)
+
+    filterBox:GetPropertyChangedSignal("Text"):Connect(function()
+        if isFocused then
+            filterBox.CursorPosition = #filterBox.Text + 1
+        end
+    end)
+
+    if not Fatality.ui.AllEntityLists then
+        Fatality.ui.AllEntityLists = {}
+    end
+    table.insert(Fatality.ui.AllEntityLists, updateDisplay)
 
     return scrollFrame
 end
@@ -3244,6 +3668,9 @@ function createItemPanelSystem(parent, itemPanels, defaultPanelIndex)
                     elseif item.Type == "TextList" then
                         local textListElement = Fatality.ui.TextList(itemPanelFrame, item.lang)
                         textListElement.Position = UDim2.new(0.025, 0, 0, currentYOffset)
+                    elseif item.Type == "EntityList" then
+                        local textEntityElement = Fatality.ui.EntityList(itemPanelFrame)
+                        textEntityElement.Position = UDim2.new(0.025, 0, 0, currentYOffset)
                     end
                     yOffset = currentYOffset + 30
                     if item.Type == "ComboBox" then
@@ -3259,6 +3686,8 @@ function createItemPanelSystem(parent, itemPanels, defaultPanelIndex)
                     elseif item.Type == "ModelViewer" then
                         yOffset = yOffset + 170
                     elseif item.Type == "TextList" then
+                        yOffset = yOffset + 110
+                    elseif item.Type == "EntityList" then
                         yOffset = yOffset + 110
                     end
                 end
@@ -3486,6 +3915,12 @@ local VisualItemPanels = {
                 Height = 233,
                 Pal = 1,
                 Items = {
+                    { Type = "CheckBox", Text = "Box", Var = "BoxEntity", colpicker = "BoxEntityCol" },
+                    { Type = "ComboBox", Text = "Box Style", Var = "BoxEntityStyle", Options = {"Default", "Corner", "Box 3D"} },
+                    { Type = "CheckBox", Text = "Name", Var = "NameEntity", colpicker = "NameEntityCol" },
+                    { Type = "CheckBox", Text = "Class", Var = "ClassEntity", colpicker = "ClassEntityCol" },
+                    { Type = "Slider", Text = "Distance", Var = "DistanceEntity", Min = 0, Max = 10000, Dec = 0 },
+                    { Type = "Slider", Text = "Update Esp", Var = "EntityUpdateInterval", Min = 0, Max = 80, Dec = 0 },
                 }
             },
             {
@@ -3535,6 +3970,20 @@ local VisualItemPanels = {
                     { Type = "Slider", Text = "Glow Outline Max", Var = "GlowOutlineMax", Min = 0, Max = 1, Dec = 1 }
                 }
             },
+            {
+                Name = "Entity",
+                Height = 486,
+                Pal = 2,
+                Items = {
+                    { Type = "CheckBox", Text = "Chams", Var = "ChamsEntity", colpicker = "ChamsEntityCol" },
+                    { Type = "CheckBox", Text = "AlwaysOnTop", Var = "ChamsEntityAlwaysOnTop" },
+                    { Type = "ComboBox", Text = "Chams Materials", Var = "ChamsMaterialsEntity", Options = {"Flat", "Outline", "Glow", "Pulsating"} },
+                    { Type = "Slider", Text = "Pulsating", Var = "PulsatingSliderEntity", Min = 0, Max = 1, Dec = 1 },
+                    { Type = "Slider", Text = "Glow Outline Min", Var = "GlowOutlineMinEntity", Min = 0, Max = 1, Dec = 1 },
+                    { Type = "Slider", Text = "Glow Outline Max", Var = "GlowOutlineMaxEntity", Min = 0, Max = 1, Dec = 1 }
+                }
+            }
+                
         }
     }
 }
@@ -3572,6 +4021,22 @@ local CombatlItemPanels = {
                     { Type = "CheckBox", Text = "Team Teleport", Var = "TeamTeleport" },
                     { Type = "CheckBox", Text = "Camera Teleport", Var = "CameraTeleport", bind = "CameraTeleportBind" },
                     { Type = "CheckBox", Text = "Camera Teleport Team", Var = "CameraTeleportTeam" },
+                }
+            }
+        }
+    }
+}
+
+local MisclItemPanels = {
+    {
+        Name = "Fatality",
+        ItemPanels = {
+            {
+                Name = "EntityList",
+                Height = 486,
+                Pal = 1,
+                Items = {
+                    { Type = "EntityList" },
                 }
             }
         }
@@ -3665,7 +4130,7 @@ local ConfiglItemPanels = {
 createTab("Aimbot", aimbotItemPanels)
 createTab("Visual", VisualItemPanels)
 createTab("Combat", CombatlItemPanels)
-createTab("Misc")
+createTab("Misc", MisclItemPanels)
 createTab("Config", ConfiglItemPanels, true, 2)
 ---------------------------------------------------Combat
 local player = Fatality.LocalPlayer
@@ -5044,8 +5509,11 @@ Fatality.config.vars["NamePos"] = 1
 Fatality.config.vars["TeamPos"] = 3
 Fatality.config.vars["WepPlayerPos"] = 2
 Fatality.config.vars["DistancePlayerPos"] = 2
+Fatality.config.vars["NameEntityPos"] = 1
+Fatality.config.vars["ClassEntityPos"] = 2
 
 local ESP_Boxes = {}
+local Entity_ESP_Boxes = {} 
 local parts = {"Head", "HumanoidRootPart", "Torso", "UpperTorso", "LowerTorso", "Left Leg", "Right Leg", "Left Arm", "Right Arm", "LeftFoot", "LeftUpperArm", "LeftUpperLeg", "RightFoot", "RightUpperArm", "RightUpperLeg"}
 --Все хитбоксы одной из моделей "LeftFoot","LeftHand","LeftLowerArm","LeftLowerLeg","LeftUpperArm","LeftUpperLeg","LowerTorso","LeftLowerLeg","LeftUpperLeg","LowerTorso","RightFoot","RightHand","RightLowerArm","RightLowerLeg","RightUpperArm","RightUpperLeg","UpperTorso"
 
@@ -5060,6 +5528,29 @@ local function GetBoundingBox(character)
             min = min:Min(pos - size)
             max = max:Max(pos + size)
             found = true
+        end
+    end
+    if not found then return nil end
+    return min, max
+end
+
+local function GetEntityBoundingBox(entity)
+    if not entity then return nil end
+    local min, max = Vector3.new(math.huge, math.huge, math.huge), Vector3.new(-math.huge, -math.huge, -math.huge)
+    local found = false
+    if entity:IsA("BasePart") or entity:IsA("MeshPart") or entity:IsA("Part") or entity:IsA("Seat") then
+        local pos, size = entity.Position, entity.Size / 2
+        min = pos - size
+        max = pos + size
+        found = true
+    elseif entity:IsA("Model") then
+        for _, part in ipairs(entity:GetDescendants()) do
+            if part:IsA("BasePart") or part:IsA("MeshPart") or part:IsA("Part") or part:IsA("Seat") then
+                local pos, size = part.Position, part.Size / 2
+                min = min:Min(pos - size)
+                max = max:Max(pos + size)
+                found = true
+            end
         end
     end
     if not found then return nil end
@@ -5214,6 +5705,47 @@ local function CreateESPBox(player)
     ESP_Boxes[player] = {box = box,screenGui = screenGui,nameLabel = nameLabel,healthLabel = healthLabel,teamLabel = teamLabel,weaponLabel = weaponLabel,distanceLabel = distanceLabel,healthSlider = healthSlider,healthSliderBG = healthSliderBG,lastName = "",lastTeam = "",lastWeapon = "",lastDistance = "",lastHealth = ""}
 end
 
+local function CreateEntityESPBox(entity)
+    local box = {TopLeft = Drawing.new("Line"),TopRight = Drawing.new("Line"),BottomLeft = Drawing.new("Line"),BottomRight = Drawing.new("Line"),Left = Drawing.new("Line"),Right = Drawing.new("Line"),Top = Drawing.new("Line"),Bottom = Drawing.new("Line"),BackTopLeft = Drawing.new("Line"),BackTopRight = Drawing.new("Line"),BackBottomLeft = Drawing.new("Line"),BackBottomRight = Drawing.new("Line")}
+    for _, line in pairs(box) do
+        line.Visible = false
+        line.Color = Fatality.config.colors["BoxEntityCol"] 
+        line.Transparency = Fatality.config.colors.alpha["BoxEntityCol"]
+        line.Thickness = 2
+        line.ZIndex = 2
+    end
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "ESP_Entity_" .. (entity.Name or tostring(entity))
+    screenGui.Parent = gui
+    screenGui.IgnoreGuiInset = true
+
+    local nameLabel = Instance.new("TextLabel")
+    nameLabel.BackgroundTransparency = 1
+    nameLabel.TextColor3 = Fatality.config.colors["NameEntityCol"] 
+    nameLabel.TextTransparency = 1 - Fatality.config.colors.alpha["NameEntityCol"]
+    nameLabel.TextStrokeTransparency = 0
+    nameLabel.TextSize = 14
+    nameLabel.Font = Enum.Font.Ubuntu
+    nameLabel.Size = UDim2.new(0, 100, 0, 20)
+    nameLabel.Visible = false
+    nameLabel.TextXAlignment = Fatality.config.vars["NameEntityPos"] ~= 3 and Enum.TextXAlignment.Center or Enum.TextXAlignment.Left
+    nameLabel.Parent = screenGui
+
+    local classLabel = Instance.new("TextLabel")
+    classLabel.BackgroundTransparency = 1
+    classLabel.TextColor3 = Fatality.config.colors["ClassEntityCol"] 
+    classLabel.TextTransparency = 1 - Fatality.config.colors.alpha["ClassEntityCol"]
+    classLabel.TextStrokeTransparency = 0
+    classLabel.TextSize = 14
+    classLabel.Font = Enum.Font.Ubuntu
+    classLabel.Size = UDim2.new(0, 100, 0, 20)
+    classLabel.Visible = false
+    classLabel.TextXAlignment = Fatality.config.vars["ClassEntityPos"] ~= 3 and Enum.TextXAlignment.Center or Enum.TextXAlignment.Left
+    classLabel.Parent = screenGui
+
+    Entity_ESP_Boxes[entity] = {box = box,screenGui = screenGui,nameLabel = nameLabel,classLabel = classLabel,lastName = "",lastClass = "",lastDistance = ""}
+end
+
 local lastCameraCFrame = nil
 local headYOffset = nil
 
@@ -5324,6 +5856,7 @@ local function UpdateESP()
         lastUpdate = currentTime
         local localCharacter = LocalPlayer.Character
         local localRoot = localCharacter and localCharacter:FindFirstChild("HumanoidRootPart")
+
         for player, elements in pairs(ESP_Boxes) do
             local box = elements.box
             local nameLabel = elements.nameLabel
@@ -5380,8 +5913,8 @@ local function UpdateESP()
                 local boxWidth = screenBox.maxX - screenBox.minX
                 local boxHeight = screenBox.maxY - screenBox.minY
                 local boxPosition = Vector2.new(screenBox.minX, screenBox.minY)
-                local boxColor = Fatality.config.colors["EspCol"] 
-                local boxAlpha = Fatality.config.colors.alpha["EspCol"] 
+                local boxColor = Fatality.config.colors["EspCol"]
+                local boxAlpha = Fatality.config.colors.alpha["EspCol"]
                 for _, line in pairs(box) do line.Visible = false end
                 if Fatality.config.vars["BoxStyle"] == "Box 3D" then
                     local front = {
@@ -5528,7 +6061,7 @@ local function UpdateESP()
                 end
                 local xOffset = Fatality.config.vars["NamePos"] ~= 3 and -50 or 0
                 nameLabel.Position = UDim2.new(0, textPositions[1].X + xOffset, 0, textPositions[1].Y)
-                nameLabel.TextColor3 = Fatality.config.colors["NameCol"] 
+                nameLabel.TextColor3 = Fatality.config.colors["NameCol"]
                 nameLabel.TextTransparency = 1 - Fatality.config.colors.alpha["NameCol"]
                 nameLabel.Visible = true
             else
@@ -5540,10 +6073,10 @@ local function UpdateESP()
                     elements.lastHealth = textContents[2]
                 end
                 local healthPerc = math.clamp(humanoid.Health / humanoid.MaxHealth, 0, 1)
-                local color1 = Fatality.config.colors["HealthPlayerCol"] 
+                local color1 = Fatality.config.colors["HealthPlayerCol"]
                 local color2 = Fatality.config.colors["HealthPlayerCol2"]
-                local alpha1 = Fatality.config.colors.alpha["HealthPlayerCol"] 
-                local alpha2 = Fatality.config.colors.alpha["HealthPlayerCol2"] 
+                local alpha1 = Fatality.config.colors.alpha["HealthPlayerCol"]
+                local alpha2 = Fatality.config.colors.alpha["HealthPlayerCol2"]
                 local r = color1.R + (color2.R - color1.R) * (1 - healthPerc)
                 local g = color1.G + (color2.G - color1.G) * (1 - healthPerc)
                 local b = color1.B + (color2.B - color1.B) * (1 - healthPerc)
@@ -5580,8 +6113,8 @@ local function UpdateESP()
                 end
                 local xOffset = Fatality.config.vars["WepPlayerPos"] ~= 3 and -50 or 0
                 weaponLabel.Position = UDim2.new(0, textPositions[3].X + xOffset, 0, textPositions[3].Y)
-                weaponLabel.TextColor3 = Fatality.config.colors["WepPlayerCol"] 
-                weaponLabel.TextTransparency = 1 - Fatality.config.colors.alpha["WepPlayerCol"]
+                nameLabel.TextColor3 = Fatality.config.colors["WepPlayerCol"]
+                nameLabel.TextTransparency = 1 - Fatality.config.colors.alpha["WepPlayerCol"]
                 weaponLabel.Visible = true
             else
                 weaponLabel.Visible = false
@@ -5593,7 +6126,7 @@ local function UpdateESP()
                 end
                 local xOffset = Fatality.config.vars["TeamPos"] ~= 3 and -50 or 0
                 teamLabel.Position = UDim2.new(0, textPositions[4].X + xOffset, 0, textPositions[4].Y)
-                teamLabel.TextColor3 = Fatality.config.colors["TeamCol"] 
+                teamLabel.TextColor3 = Fatality.config.colors["TeamCol"]
                 teamLabel.TextTransparency = 1 - Fatality.config.colors.alpha["TeamCol"]
                 teamLabel.Visible = true
             else
@@ -5606,11 +6139,312 @@ local function UpdateESP()
                 end
                 local xOffset = Fatality.config.vars["DistancePlayerPos"] ~= 3 and -50 or 0
                 distanceLabel.Position = UDim2.new(0, textPositions[5].X + xOffset, 0, textPositions[5].Y)
-                distanceLabel.TextColor3 = Fatality.config.colors["DistancePlayerCol"] 
+                distanceLabel.TextColor3 = Fatality.config.colors["DistancePlayerCol"]
                 distanceLabel.TextTransparency = 1 - Fatality.config.colors.alpha["DistancePlayerCol"]
                 distanceLabel.Visible = true
             else
                 distanceLabel.Visible = false
+            end
+        end
+    end)
+end
+
+local entityLookup = {}
+
+local function AddEntityToLookup(entity)
+    if validEntities[entity] then
+        local key = entity.Name .. "|" .. entity.ClassName
+        entityLookup[key] = entityLookup[key] or {}
+        table.insert(entityLookup[key], entity)
+    end
+end
+
+local function RemoveEntityFromLookup(entity)
+    local key = entity.Name .. "|" .. entity.ClassName
+    if entityLookup[key] then
+        for i, storedEntity in ipairs(entityLookup[key]) do
+            if storedEntity == entity then
+                table.remove(entityLookup[key], i)
+                break
+            end
+        end
+        if #entityLookup[key] == 0 then
+            entityLookup[key] = nil
+        end
+    end
+end
+
+for _, entity in ipairs(Fatality.WorkSpace:GetDescendants()) do
+    if (entity:IsA("Model") or entity:IsA("BasePart") or entity:IsA("MeshPart") or entity:IsA("Part") or entity:IsA("Seat")) and not entity:IsA("Terrain") then
+        if entity:IsA("Model") then
+            for _, descendant in ipairs(entity:GetDescendants()) do
+                if descendant:IsA("BasePart") or descendant:IsA("MeshPart") or descendant:IsA("Part") or descendant:IsA("Seat") then
+                    validEntities[entity] = true
+                    AddEntityToLookup(entity)
+                    break
+                end
+            end
+        elseif not entity.Parent:IsA("Model") then
+            validEntities[entity] = true
+            AddEntityToLookup(entity)
+        end
+    end
+end
+
+Fatality.WorkSpace.DescendantAdded:Connect(function(descendant)
+    if (descendant:IsA("Model") or descendant:IsA("BasePart") or descendant:IsA("MeshPart") or descendant:IsA("Part") or descendant:IsA("Seat")) and not descendant:IsA("Terrain") then
+        if descendant:IsA("Model") then
+            for _, child in ipairs(descendant:GetDescendants()) do
+                if child:IsA("BasePart") or child:IsA("MeshPart") or child:IsA("Part") or child:IsA("Seat") then
+                    validEntities[descendant] = true
+                    AddEntityToLookup(descendant)
+                    break
+                end
+            end
+        elseif descendant.Parent and not descendant.Parent:IsA("Model") then
+            validEntities[descendant] = true
+            AddEntityToLookup(descendant)
+        end
+    end
+end)
+
+local function UpdateEntityESP()
+    local lastEntityUpdate = tick()
+    local connection
+    connection = RunService.RenderStepped:Connect(function(deltaTime)
+        if not Fatality.LocalCamera or not Fatality.LocalPlayer then
+            for entity, elements in pairs(Entity_ESP_Boxes) do
+                for _, line in pairs(elements.box) do line.Visible = false end
+                elements.nameLabel.Visible = false
+                elements.classLabel.Visible = false
+            end
+            return
+        end
+        local localCharacter = LocalPlayer.Character
+        local localRoot = localCharacter and localCharacter:FindFirstChild("HumanoidRootPart")
+        local updateInterval = Fatality.config.vars["EntityUpdateInterval"] / 1000
+        if not (Fatality.config.vars["BoxEntity"] or Fatality.config.vars["NameEntity"] or Fatality.config.vars["ClassEntity"] or Fatality.config.vars["DistanceEntity"]) then
+            for entity, elements in pairs(Entity_ESP_Boxes) do
+                for _, line in pairs(elements.box) do
+                    line:Remove()
+                end
+                elements.nameLabel:Destroy()
+                elements.classLabel:Destroy()
+                if elements.screenGui then elements.screenGui:Destroy() end
+                Entity_ESP_Boxes[entity] = nil
+            end
+            connection:Disconnect()
+            return
+        end
+        local currentTime = tick()
+        if currentTime - lastEntityUpdate < updateInterval then return end
+        lastEntityUpdate = currentTime
+        local selectedEntities = {}
+        for _, entry in ipairs(Fatality.config.vars["Entity"]) do
+            local key = entry.name .. "|" .. entry.className
+            local entities = entityLookup[key]
+            if entities then
+                for _, entity in ipairs(entities) do
+                    selectedEntities[entity] = true
+                end
+            end
+        end
+        for entity, elements in pairs(Entity_ESP_Boxes) do
+            if not selectedEntities[entity] then
+                for _, line in pairs(elements.box) do line.Visible = false end
+                elements.nameLabel.Visible = false
+                elements.classLabel.Visible = false
+                if elements.screenGui then elements.screenGui:Destroy() end
+                Entity_ESP_Boxes[entity] = nil
+            end
+        end
+        for entity, _ in pairs(selectedEntities) do
+            if not Entity_ESP_Boxes[entity] then
+                CreateEntityESPBox(entity)
+            end
+            local elements = Entity_ESP_Boxes[entity]
+            local box = elements.box
+            local nameLabel = elements.nameLabel
+            local classLabel = elements.classLabel
+            local function HideEntityEsp()
+                for _, line in pairs(box) do line.Visible = false end
+                elements.nameLabel.Visible = false
+                elements.classLabel.Visible = false
+            end
+            local entityPos = entity:IsA("BasePart") and entity.Position or (entity:IsA("Model") and entity.PrimaryPart and entity.PrimaryPart.Position or entity:GetPivot().Position)
+            if not entityPos then
+                HideEntityEsp()
+                continue
+            end
+            local _, onScreen = Camera:WorldToViewportPoint(entityPos)
+            if not onScreen then
+                HideEntityEsp()
+                continue
+            end
+            if Fatality.config.vars["DistanceEntity"] and localRoot then
+                local distance = (localRoot.Position - entityPos).Magnitude
+                if distance > Fatality.config.vars["DistanceEntity"] then
+                    HideEntityEsp()
+                    continue
+                end
+            end
+            local min, max = GetEntityBoundingBox(entity)
+            if not min or not max then
+                HideEntityEsp()
+                continue
+            end
+            local screenBox = WorldToScreenBox(min, max)
+            if not screenBox then
+                HideEntityEsp()
+                continue
+            end
+            if Fatality.config.vars["BoxEntity"] then
+                local boxWidth = screenBox.maxX - screenBox.minX
+                local boxHeight = screenBox.maxY - screenBox.minY
+                local boxPosition = Vector2.new(screenBox.minX, screenBox.minY)
+                local boxColor = Fatality.config.colors["BoxEntityCol"]
+                local boxAlpha = Fatality.config.colors.alpha["BoxEntityCol"]
+                for _, line in pairs(box) do line.Visible = false end
+                if Fatality.config.vars["BoxEntityStyle"] == "Box 3D" then
+                    local front = {
+                        TL = screenBox.corners[4],
+                        TR = screenBox.corners[8],
+                        BL = screenBox.corners[2],
+                        BR = screenBox.corners[6]
+                    }
+                    local back = {
+                        TL = screenBox.corners[3],
+                        TR = screenBox.corners[7],
+                        BL = screenBox.corners[1],
+                        BR = screenBox.corners[5]
+                    }
+                    if front.TL and front.TR and front.BL and front.BR and
+                       back.TL and back.TR and back.BL and back.BR then
+                        box.TopLeft.From = front.TL
+                        box.TopLeft.To = front.TR
+                        box.TopLeft.Visible = true
+                        box.TopRight.From = front.TR
+                        box.TopRight.To = front.BR
+                        box.TopRight.Visible = true
+                        box.BottomLeft.From = front.BL
+                        box.BottomLeft.To = front.BR
+                        box.BottomLeft.Visible = true
+                        box.BottomRight.From = front.TL
+                        box.BottomRight.To = front.BL
+                        box.BottomRight.Visible = true
+                        box.Left.From = back.TL
+                        box.Left.To = back.TR
+                        box.Left.Visible = true
+                        box.Right.From = back.TR
+                        box.Right.To = back.BR
+                        box.Right.Visible = true
+                        box.Top.From = back.BL
+                        box.Top.To = back.BR
+                        box.Top.Visible = true
+                        box.Bottom.From = back.TL
+                        box.Bottom.To = back.BL
+                        box.Bottom.Visible = true
+                        box.BackTopLeft.From = front.TL
+                        box.BackTopLeft.To = back.TL
+                        box.BackTopLeft.Visible = true
+                        box.BackTopRight.From = front.TR
+                        box.BackTopRight.To = back.TR
+                        box.BackTopRight.Visible = true
+                        box.BackBottomLeft.From = front.BL
+                        box.BackBottomLeft.To = back.BL
+                        box.BackBottomLeft.Visible = true
+                        box.BackBottomRight.From = front.BR
+                        box.BackBottomRight.To = back.BR
+                        box.BackBottomRight.Visible = true
+                    end
+                elseif Fatality.config.vars["BoxEntityStyle"] == "Corner" then
+                    local cornerSize = boxWidth * 0.2
+                    box.TopLeft.From = boxPosition
+                    box.TopLeft.To = boxPosition + Vector2.new(cornerSize, 0)
+                    box.TopLeft.Visible = true
+                    box.TopRight.From = boxPosition + Vector2.new(boxWidth, 0)
+                    box.TopRight.To = boxPosition + Vector2.new(boxWidth - cornerSize, 0)
+                    box.TopRight.Visible = true
+                    box.BottomLeft.From = boxPosition + Vector2.new(0, boxHeight)
+                    box.BottomLeft.To = boxPosition + Vector2.new(cornerSize, boxHeight)
+                    box.BottomLeft.Visible = true
+                    box.BottomRight.From = boxPosition + Vector2.new(boxWidth, boxHeight)
+                    box.BottomRight.To = boxPosition + Vector2.new(boxWidth - cornerSize, boxHeight)
+                    box.BottomRight.Visible = true
+                    box.Left.From = boxPosition
+                    box.Left.To = boxPosition + Vector2.new(0, cornerSize)
+                    box.Left.Visible = true
+                    box.Right.From = boxPosition + Vector2.new(boxWidth, 0)
+                    box.Right.To = boxPosition + Vector2.new(boxWidth, cornerSize)
+                    box.Right.Visible = true
+                    box.Top.From = boxPosition + Vector2.new(0, boxHeight)
+                    box.Top.To = boxPosition + Vector2.new(0, boxHeight - cornerSize)
+                    box.Top.Visible = true
+                    box.Bottom.From = boxPosition + Vector2.new(boxWidth, boxHeight)
+                    box.Bottom.To = boxPosition + Vector2.new(boxWidth, boxHeight - cornerSize)
+                    box.Bottom.Visible = true
+                elseif Fatality.config.vars["BoxEntityStyle"] == "Default" then
+                    box.Left.From = boxPosition
+                    box.Left.To = boxPosition + Vector2.new(0, boxHeight)
+                    box.Left.Visible = true
+                    box.Right.From = boxPosition + Vector2.new(boxWidth, 0)
+                    box.Right.To = boxPosition + Vector2.new(boxWidth, boxHeight)
+                    box.Right.Visible = true
+                    box.Top.From = boxPosition
+                    box.Top.To = boxPosition + Vector2.new(boxWidth, 0)
+                    box.Top.Visible = true
+                    box.Bottom.From = boxPosition + Vector2.new(0, boxHeight)
+                    box.Bottom.To = boxPosition + Vector2.new(boxWidth, boxHeight)
+                    box.Bottom.Visible = true
+                    box.TopLeft.Visible = false
+                    box.TopRight.Visible = false
+                    box.BottomLeft.Visible = false
+                    box.BottomRight.Visible = false
+                end
+                for _, line in pairs(box) do
+                    if line.Visible then
+                        line.Color = boxColor
+                        line.Thickness = 2
+                    end
+                end
+            else
+                for _, line in pairs(box) do line.Visible = false end
+            end
+            local types = {Fatality.config.vars["NameEntityPos"], Fatality.config.vars["ClassEntityPos"]}
+            local enabled = {Fatality.config.vars["NameEntity"], Fatality.config.vars["ClassEntity"]}
+            local textContents = {"", ""}
+            if enabled[1] then
+                textContents[1] = entity.Name or ""
+            end
+            if enabled[2] then
+                textContents[2] = entity.ClassName or ""
+            end
+            local textPositions = GetTextPositions(screenBox.minX, screenBox.minY, screenBox.maxX, screenBox.maxY, types, enabled, textContents)
+            if enabled[1] and textPositions[1] and textContents[1] ~= "" then
+                if elements.lastName ~= textContents[1] then
+                    nameLabel.Text = textContents[1]
+                    elements.lastName = textContents[1]
+                end
+                local xOffset = Fatality.config.vars["NameEntityPos"] ~= 3 and -50 or 0
+                nameLabel.Position = UDim2.new(0, textPositions[1].X + xOffset, 0, textPositions[1].Y)
+                nameLabel.TextColor3 = Fatality.config.colors["NameEntityCol"]
+                nameLabel.TextTransparency = 1 - Fatality.config.colors.alpha["NameEntityCol"]
+                nameLabel.Visible = true
+            else
+                nameLabel.Visible = false
+            end
+            if enabled[2] and textPositions[2] and textContents[2] ~= "" then
+                if elements.lastClass ~= textContents[2] then
+                    classLabel.Text = textContents[2]
+                    elements.lastClass = textContents[2]
+                end
+                local xOffset = Fatality.config.vars["ClassEntityPos"] ~= 3 and -50 or 0
+                classLabel.Position = UDim2.new(0, textPositions[2].X + xOffset, 0, textPositions[2].Y)
+                classLabel.TextColor3 = Fatality.config.colors["ClassEntityCol"]
+                classLabel.TextTransparency = 1 - Fatality.config.colors.alpha["ClassEntityCol"]
+                classLabel.Visible = true
+            else
+                classLabel.Visible = false
             end
         end
     end)
@@ -5632,30 +6466,44 @@ Players.PlayerRemoving:Connect(function(player)
     end
 end)
 
+Fatality.WorkSpace.DescendantRemoving:Connect(function(descendant)
+    validEntities[descendant] = nil
+    RemoveEntityFromLookup(descendant)
+    local elements = Entity_ESP_Boxes[descendant]
+    if elements then
+        for _, line in pairs(elements.box) do
+            line:Remove()
+        end
+        if elements.screenGui then elements.screenGui:Destroy() end
+        Entity_ESP_Boxes[descendant] = nil
+    end
+end)
+
 UpdateESP()
+UpdateEntityESP()
 
 
 
 local chamsData = {}
 
-local function clearChams(character)
-    if chamsData[character] then
-        if chamsData[character].model then
-            chamsData[character].model:Destroy()
+local function clearChams(item)
+    if chamsData[item] then
+        if chamsData[item].model then
+            chamsData[item].model:Destroy()
         end
-        if chamsData[character].highlightAlways then
-            chamsData[character].highlightAlways:Destroy()
+        if chamsData[item].highlightAlways then
+            chamsData[item].highlightAlways:Destroy()
         end
-        if chamsData[character].highlightOccluded then
-            chamsData[character].highlightOccluded:Destroy()
+        if chamsData[item].highlightOccluded then
+            chamsData[item].highlightOccluded:Destroy()
         end
-        for _, clone in pairs(chamsData[character].clonedParts or {}) do
+        for _, clone in pairs(chamsData[item].clonedParts or {}) do
             if clone then
                 clone:Destroy()
             end
         end
-        chamsData[character] = nil
-        chamsCharacters[character] = nil
+        chamsData[item] = nil
+        chamsCharacters[item] = nil
     end
 end
 
@@ -5721,14 +6569,44 @@ local function applyChams(character)
     chamsCharacters[character] = model or character
 end
 
+local function applyEntityChams(entity)
+    if not entity or chamsData[entity] then return end
+    if not Fatality.config.vars["ChamsEntity"] then return end
+
+    local highlightOccluded = Instance.new("Highlight")
+    highlightOccluded.Name = "cham_entity_occluded"
+    highlightOccluded.DepthMode = Fatality.config.vars["ChamsEntityAlwaysOnTop"] and Enum.HighlightDepthMode.AlwaysOnTop or Enum.HighlightDepthMode.Occluded
+    highlightOccluded.FillColor = Fatality.config.colors["ChamsEntityCol"]
+    highlightOccluded.FillTransparency = 1 - Fatality.config.colors.alpha["ChamsEntityCol"]
+    highlightOccluded.OutlineTransparency = 1
+    highlightOccluded.Enabled = true
+    highlightOccluded.Parent = entity
+
+    local rootPart
+    if entity:IsA("Model") then
+        rootPart = entity:FindFirstChildWhichIsA("BasePart")
+    else
+        rootPart = entity
+    end
+
+    chamsData[entity] = {highlightOccluded = highlightOccluded, rootPart = rootPart}
+    chamsCharacters[entity] = entity
+end
+
 local lastPulseUpdate = 0
 local pulseValue = 0
 
-local function updateChams()
-    if not Fatality.config.vars["ChamsEnemy"] and not Fatality.config.vars["ChamsEnemyInv"] then
-        for character, data in pairs(chamsData) do
-            if data.highlightAlways then data.highlightAlways.Enabled = false end
-            if data.highlightOccluded then data.highlightOccluded.Enabled = false end
+local function updateEnemyChams()
+    if not (Fatality.config.vars["ChamsEnemy"] or Fatality.config.vars["ChamsEnemyInv"]) then
+        for item, data in pairs(chamsData) do
+            local isCharacter = item:FindFirstChild("HumanoidRootPart") and item:FindFirstChild("Head")
+            if isCharacter then
+                if data.highlightAlways then data.highlightAlways.Enabled = false end
+                if data.highlightOccluded then data.highlightOccluded.Enabled = false end
+                for _, clone in pairs(chamsData[item].clonedParts or {}) do
+                    clone.Transparency = 1
+                end
+            end
         end
         return
     end
@@ -5742,22 +6620,32 @@ local function updateChams()
     local localPlayerCharacter = Fatality.LocalPlayer.Character
     local localRoot = localPlayerCharacter and localPlayerCharacter:FindFirstChild("HumanoidRootPart")
 
-    for character, data in pairs(chamsData) do
-        if not character.Parent or not character:IsDescendantOf(workspace) or not character:FindFirstChild("Head") or not character:FindFirstChild("HumanoidRootPart") then
-            clearChams(character)
+    for item, data in pairs(chamsData) do
+        local isCharacter = item:FindFirstChild("HumanoidRootPart") and item:FindFirstChild("Head")
+        if not isCharacter then continue end
+
+        if not item.Parent or not item:IsDescendantOf(workspace) or not item:FindFirstChild("Head") or not item:FindFirstChild("HumanoidRootPart") then
+            clearChams(item)
             continue
         end
 
         local withinDistance = true
-        if localRoot and character:FindFirstChild("HumanoidRootPart") then
-            local distance = (localRoot.Position - character:FindFirstChild("HumanoidRootPart").Position).Magnitude
-            withinDistance = distance <= (Fatality.config.vars["DistanceESP"] or 1000)
+        if localRoot and localRoot.Position then
+            local itemRoot = item:FindFirstChild("HumanoidRootPart")
+            if itemRoot and itemRoot.Position then
+                local distance = (localRoot.Position - itemRoot.Position).Magnitude
+                withinDistance = distance <= Fatality.config.vars["DistanceESP"]
+            else
+                withinDistance = false
+            end
+        else
+            withinDistance = false
         end
 
         if Fatality.config.vars["ChamsEnemyInv"] and data.highlightAlways then
             data.highlightAlways.Enabled = withinDistance
             data.highlightAlways.FillColor = Fatality.config.colors["InvisibleChamsCol"]
-            for original, clone in pairs(data.clonedParts or {}) do
+            for original, clone in pairs(chamsData[item].clonedParts or {}) do
                 if original:IsDescendantOf(workspace) then
                     clone.CFrame = original.CFrame
                     clone.Size = original.Size * 0.95
@@ -5770,7 +6658,7 @@ local function updateChams()
             end
         elseif data.highlightAlways then
             data.highlightAlways.Enabled = false
-            for _, clone in pairs(data.clonedParts or {}) do
+            for _, clone in pairs(chamsData[item].clonedParts or {}) do
                 clone.Transparency = 1
             end
         end
@@ -5818,8 +6706,8 @@ local function updateChams()
             data.highlightOccluded.OutlineColor = Fatality.config.colors["VisibleChamsCol"]
         elseif material == "Glow" and data.highlightOccluded then
             data.highlightOccluded.FillTransparency = 1 - alphaVis
-            local maxTransparency = Fatality.config.vars["GlowOutlineMax"] 
-            local minTransparency = Fatality.config.vars["GlowOutlineMin"] 
+            local maxTransparency = Fatality.config.vars["GlowOutlineMax"]
+            local minTransparency = Fatality.config.vars["GlowOutlineMin"]
             local interpolatedTransparency = minTransparency + (maxTransparency - minTransparency) * pulseValue
             data.highlightOccluded.OutlineTransparency = 1 - interpolatedTransparency
             data.highlightOccluded.OutlineColor = Fatality.config.colors["VisibleChamsCol"]
@@ -5832,13 +6720,102 @@ local function updateChams()
     end
 end
 
-local connection
-local lastChamsState = { ChamsEnemy = false, ChamsEnemyInv = false, ChamsEnemyAlwaysOnTop = false }
+local function updateEntityChams()
+    if not Fatality.config.vars["ChamsEntity"] or not Fatality.config.vars["Entity"] or #Fatality.config.vars["Entity"] == 0 then
+        for item, data in pairs(chamsData) do
+            local isEntity = not (item:FindFirstChild("HumanoidRootPart") and item:FindFirstChild("Head")) and (item:IsA("BasePart") or item:IsA("Model"))
+            if isEntity and data.highlightOccluded then
+                data.highlightOccluded.Enabled = false
+                clearChams(item)
+            end
+        end
+        return
+    end
 
-local function toggleUpdate()
+    local currentTime = tick()
+    if currentTime - lastPulseUpdate >= 0.05 then
+        pulseValue = 0.5 + 0.5 * math.sin(currentTime * 2)
+        lastPulseUpdate = currentTime
+    end
+
+    local localPlayerCharacter = Fatality.LocalPlayer.Character
+    local localRoot = localPlayerCharacter and localPlayerCharacter:FindFirstChild("HumanoidRootPart")
+
+    for item, data in pairs(chamsData) do
+        local isEntity = not (item:FindFirstChild("HumanoidRootPart") and item:FindFirstChild("Head")) and (item:IsA("BasePart") or item:IsA("Model"))
+        if not isEntity then continue end
+
+        if not item.Parent or not item:IsDescendantOf(workspace) then
+            clearChams(item)
+            continue
+        end
+
+        local withinDistance = true
+        local itemPos = data.rootPart and data.rootPart:IsDescendantOf(workspace) and data.rootPart.Position or (item:IsA("Model") and item:GetPivot().Position)
+        if localRoot and localRoot.Position and itemPos then
+            pcall(function()
+                local distance = (localRoot.Position - itemPos).Magnitude
+                withinDistance = distance <= Fatality.config.vars["DistanceESP"]
+            end)
+        else
+            withinDistance = false
+        end
+
+        if Fatality.config.vars["ChamsEntity"] and data.highlightOccluded then
+            local isSelected = false
+            for _, entry in ipairs(Fatality.config.vars["Entity"]) do
+                if (entry.name or "") == item.Name and (entry.className or "") == item.ClassName then
+                    isSelected = true
+                    break
+                end
+            end
+            if isSelected then
+                data.highlightOccluded.Enabled = withinDistance
+                data.highlightOccluded.FillColor = Fatality.config.colors["ChamsEntityCol"]
+                data.highlightOccluded.DepthMode = Fatality.config.vars["ChamsEntityAlwaysOnTop"] and Enum.HighlightDepthMode.AlwaysOnTop or Enum.HighlightDepthMode.Occluded
+            else
+                data.highlightOccluded.Enabled = false
+            end
+        elseif data.highlightOccluded then
+            data.highlightOccluded.Enabled = false
+        end
+
+        local material = Fatality.config.vars["ChamsMaterialsEntity"]
+        local alphaEntity = Fatality.config.colors.alpha["ChamsEntityCol"]
+
+        if isEntity and data.highlightOccluded then
+            if material == "Flat" then
+                data.highlightOccluded.FillTransparency = 1 - alphaEntity
+                data.highlightOccluded.OutlineTransparency = 1
+            elseif material == "Outline" then
+                data.highlightOccluded.FillTransparency = 1
+                data.highlightOccluded.OutlineTransparency = 0
+                data.highlightOccluded.OutlineColor = Fatality.config.colors["ChamsEntityCol"]
+            elseif material == "Glow" then
+                data.highlightOccluded.FillTransparency = 1 - alphaEntity
+                local maxTransparency = Fatality.config.vars["GlowOutlineMaxEntity"]
+                local minTransparency = Fatality.config.vars["GlowOutlineMinEntity"]
+                local interpolatedTransparency = minTransparency + (maxTransparency - minTransparency) * pulseValue
+                data.highlightOccluded.OutlineTransparency = 1 - interpolatedTransparency
+                data.highlightOccluded.OutlineColor = Fatality.config.colors["ChamsEntityCol"]
+            elseif material == "Pulsating" then
+                local maxTransparency = alphaEntity
+                local interpolatedTransparency = Fatality.config.vars["PulsatingSliderEntity"] + (maxTransparency - Fatality.config.vars["PulsatingSliderEntity"]) * pulseValue
+                data.highlightOccluded.FillTransparency = 1 - interpolatedTransparency
+                data.highlightOccluded.OutlineTransparency = 1
+            end
+        end
+    end
+end
+
+local enemyConnection
+local entityConnection
+local lastChamsState = {ChamsEnemy = false,ChamsEnemyInv = false,ChamsEnemyAlwaysOnTop = false,ChamsEntity = false,ChamsEntityAlwaysOnTop = false,EntityListHash = ""}
+
+local function toggleEnemyUpdate()
     if Fatality.config.vars["ChamsEnemy"] or Fatality.config.vars["ChamsEnemyInv"] then
-        if not connection then
-            connection = Fatality.RunService.RenderStepped:Connect(updateChams)
+        if not enemyConnection then
+            enemyConnection = Fatality.RunService.RenderStepped:Connect(updateEnemyChams)
         end
         if Fatality.Players then
             for _, player in ipairs(game:GetService("Players"):GetPlayers()) do
@@ -5852,17 +6829,52 @@ local function toggleUpdate()
             end
         end
     else
-        if connection then
-            connection:Disconnect()
-            connection = nil
+        if enemyConnection then
+            enemyConnection:Disconnect()
+            enemyConnection = nil
         end
-        for character, data in pairs(chamsData) do
-            if data.highlightAlways then data.highlightAlways.Enabled = false end
-            if data.highlightOccluded then data.highlightOccluded.Enabled = false end
-            for _, clone in pairs(data.clonedParts or {}) do
-                clone.Transparency = 1
+        for item, data in pairs(chamsData) do
+            local isCharacter = item:FindFirstChild("HumanoidRootPart") and item:FindFirstChild("Head")
+            if isCharacter then
+                if data.highlightAlways then data.highlightAlways.Enabled = false end
+                if data.highlightOccluded then data.highlightOccluded.Enabled = false end
+                for _, clone in pairs(chamsData[item].clonedParts or {}) do
+                    clone.Transparency = 1
+                end
+                clearChams(item)
             end
-            clearChams(character)
+        end
+    end
+end
+
+local function toggleEntityUpdate()
+    if not Fatality.config.vars["ChamsEntity"] or not Fatality.config.vars["Entity"] or #Fatality.config.vars["Entity"] == 0 then
+        if entityConnection then
+            entityConnection:Disconnect()
+            entityConnection = nil
+        end
+        for item, data in pairs(chamsData) do
+            local isEntity = not (item:FindFirstChild("HumanoidRootPart") and item:FindFirstChild("Head")) and (item:IsA("BasePart") or item:IsA("Model"))
+            if isEntity and data.highlightOccluded then
+                data.highlightOccluded.Enabled = false
+                clearChams(item)
+            end
+        end
+        return
+    end
+
+    if not entityConnection then
+        entityConnection = Fatality.RunService.RenderStepped:Connect(updateEntityChams)
+    end
+    for _, entityEntry in ipairs(Fatality.config.vars["Entity"]) do
+        if not entityEntry.name or not entityEntry.className then
+            continue
+        end
+        for _, obj in ipairs(workspace:GetDescendants()) do
+            if (obj:IsA("BasePart") or obj:IsA("Model")) and obj.Name == entityEntry.name and obj.ClassName == entityEntry.className then
+                clearChams(obj)
+                applyEntityChams(obj)
+            end
         end
     end
 end
@@ -5895,21 +6907,68 @@ if Fatality.Players then
     Fatality.Players.PlayerAdded:Connect(handlePlayer)
 end
 
+local function getEntityListHash()
+    if not Fatality.config.vars["Entity"] then
+        return ""
+    end
+    local hash = ""
+    for _, entry in ipairs(Fatality.config.vars["Entity"]) do
+        hash = hash .. (entry.name or "") .. (entry.className or "")
+    end
+    return hash
+end
+
 Fatality.RunService.Heartbeat:Connect(function()
-    local currentChamsEnemy = Fatality.config.vars["ChamsEnemy"] or false
-    local currentChamsEnemyInv = Fatality.config.vars["ChamsEnemyInv"] or false
-    local currentChamsEnemyAlwaysOnTop = Fatality.config.vars["ChamsEnemyAlwaysOnTop"] or false
+    local currentChamsEnemy = Fatality.config.vars["ChamsEnemy"]
+    local currentChamsEnemyInv = Fatality.config.vars["ChamsEnemyInv"]
+    local currentChamsEnemyAlwaysOnTop = Fatality.config.vars["ChamsEnemyAlwaysOnTop"]
+    local currentChamsEntity = Fatality.config.vars["ChamsEntity"]
+    local currentChamsEntityAlwaysOnTop = Fatality.config.vars["ChamsEntityAlwaysOnTop"]
+    local currentEntityListHash = getEntityListHash()
+
     if currentChamsEnemy ~= lastChamsState.ChamsEnemy or 
        currentChamsEnemyInv ~= lastChamsState.ChamsEnemyInv or 
        currentChamsEnemyAlwaysOnTop ~= lastChamsState.ChamsEnemyAlwaysOnTop then
         lastChamsState.ChamsEnemy = currentChamsEnemy
         lastChamsState.ChamsEnemyInv = currentChamsEnemyInv
         lastChamsState.ChamsEnemyAlwaysOnTop = currentChamsEnemyAlwaysOnTop
-        toggleUpdate()
+        toggleEnemyUpdate()
+    end
+
+    if currentChamsEntity ~= lastChamsState.ChamsEntity or
+       currentChamsEntityAlwaysOnTop ~= lastChamsState.ChamsEntityAlwaysOnTop or
+       currentEntityListHash ~= lastChamsState.EntityListHash then
+        lastChamsState.ChamsEntity = currentChamsEntity
+        lastChamsState.ChamsEntityAlwaysOnTop = currentChamsEntityAlwaysOnTop
+        lastChamsState.EntityListHash = currentEntityListHash
+        toggleEntityUpdate()
     end
 end)
 
-toggleUpdate()
+Fatality.WorkSpace.DescendantRemoving:Connect(function(descendant)
+    if chamsData[descendant] then
+        clearChams(descendant)
+    end
+end)
+
+Fatality.WorkSpace.DescendantAdded:Connect(function(descendant)
+    if not Fatality.config.vars["ChamsEntity"] or not Fatality.config.vars["Entity"] or #Fatality.config.vars["Entity"] == 0 then
+        return
+    end
+    for _, entityEntry in ipairs(Fatality.config.vars["Entity"]) do
+        if not entityEntry.name or not entityEntry.className then
+            continue
+        end
+        if (descendant:IsA("BasePart") or descendant:IsA("Model")) and
+           descendant.Name == entityEntry.name and descendant.ClassName == entityEntry.className then
+            task.wait(0.1)
+            applyEntityChams(descendant)
+        end
+    end
+end)
+
+toggleEnemyUpdate()
+toggleEntityUpdate()
 
 
 
