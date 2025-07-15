@@ -4,7 +4,7 @@ local users = {
     {username = "admin", password = "admin123", discord_nickname = "love_gitler", hwid = "95DC1493-4ED1-436F-B563-CC545354CD8B", subscription = "true" },
     {username = "i pidor", password = "sam ti pidor", discord_nickname = "byblik_v_smetane", hwid = "", subscription = "false"},
     {username = "Fatal", password = "Dofamania123321", discord_nickname = "kleef.", hwid = "41C35432-7B9B-46B6-854F-8598F40C8610", subscription = "true"},
-    {username = "sadasd", password = "asdasdasd", discord_nickname = "love_gitler", hwid = "", subscription = "false"}
+    {username = "Rinarik", password = "Riso15", discord_nickname = "rinarya", hwid = "", subscription = "false"}
 }
 
 
